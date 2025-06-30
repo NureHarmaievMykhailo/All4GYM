@@ -2,7 +2,8 @@ using All4GYM.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Stripe;
-using System.Text;
+using Swashbuckle.AspNetCore.Annotations;
+using Microsoft.AspNetCore.Authorization;
 
 namespace All4GYM.Controllers;
 
@@ -19,13 +20,22 @@ public class PaymentWebhookController : ControllerBase
         _config = config;
     }
 
+    /// <summary>
+    /// Webhook Stripe. Оновлює статус платежу в БД.
+    /// </summary>
+    /// <returns>200 OK</returns>
     [HttpPost]
+    [AllowAnonymous]
+    [SwaggerOperation(
+        Summary = "Webhook від Stripe",
+        Description = "Цей ендпоінт приймає події Stripe (наприклад, payment_intent.succeeded) і оновлює статус платежу в БД."
+    )]
     public async Task<IActionResult> StripeWebhook()
     {
         var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
 
         var stripeSignature = Request.Headers["Stripe-Signature"];
-        var endpointSecret = _config["Stripe:WebhookSecret"]; // додай у appsettings.json
+        var endpointSecret = _config["Stripe:WebhookSecret"]; // appsettings.json
 
         Event stripeEvent;
 

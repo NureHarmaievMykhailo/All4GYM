@@ -5,9 +5,12 @@
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/All4GYM.runtimeconfig.json
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/All4GYM.dll
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/All4GYM.pdb
+/Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/AutoMapper.dll
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Azure.Core.dll
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Azure.Identity.dll
+/Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/BCrypt.Net-Next.dll
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Humanizer.dll
+/Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Microsoft.AspNetCore.OpenApi.dll
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Microsoft.Bcl.AsyncInterfaces.dll
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Microsoft.CodeAnalysis.dll
@@ -38,6 +41,9 @@
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Microsoft.OpenApi.dll
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Microsoft.SqlServer.Server.dll
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Mono.TextTemplating.dll
+/Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Newtonsoft.Json.dll
+/Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Stripe.net.dll
+/Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Swashbuckle.AspNetCore.Annotations.dll
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Swashbuckle.AspNetCore.Swagger.dll
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Swashbuckle.AspNetCore.SwaggerGen.dll
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Swashbuckle.AspNetCore.SwaggerUI.dll
@@ -119,6 +125,7 @@
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/obj/Debug/net8.0/All4GYM.csproj.CoreCompileInputs.cache
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/obj/Debug/net8.0/All4GYM.MvcApplicationPartsAssemblyInfo.cs
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/obj/Debug/net8.0/All4GYM.MvcApplicationPartsAssemblyInfo.cache
+/Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/obj/Debug/net8.0/All4GYM.sourcelink.json
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/obj/Debug/net8.0/staticwebassets.build.json
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/obj/Debug/net8.0/staticwebassets.development.json
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/obj/Debug/net8.0/staticwebassets/msbuild.All4GYM.Microsoft.AspNetCore.StaticWebAssets.props
@@ -133,8 +140,3 @@
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/obj/Debug/net8.0/All4GYM.pdb
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/obj/Debug/net8.0/All4GYM.genruntimeconfig.cache
 /Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/obj/Debug/net8.0/ref/All4GYM.dll
-/Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/AutoMapper.dll
-/Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/BCrypt.Net-Next.dll
-/Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
-/Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Newtonsoft.Json.dll
-/Users/evelinakibalkina/RiderProjects/All4GYM/All4GYM/bin/Debug/net8.0/Stripe.net.dll

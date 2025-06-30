@@ -1,25 +1,87 @@
 using Microsoft.EntityFrameworkCore;
 using All4GYM.Data;
 using All4GYM.Services;
+using All4GYM.Services.Stripe;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Stripe ключ
 Stripe.StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 
+// Swagger + JWT підтримка
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "All4GYM API",
+        Version = "1.0", // краще без "v"
+        Description = "Backend API для All4GYM",
+        Contact = new OpenApiContact
+        {
+            Name = "All4GYM Team",
+            Email = "support@all4gym.com"
+        }
+    });
+    
+    c.EnableAnnotations();
 
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "Введіть ваш JWT токен у форматі: Bearer {token}"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+// База даних
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Сервіси
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddSingleton<JwtService>();
-builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddScoped<ITrainingProgramService, TrainingProgramService>();
+builder.Services.AddScoped<IWorkoutService, WorkoutService>();
+builder.Services.AddScoped<IExerciseService, ExerciseService>();
+builder.Services.AddScoped<IWorkoutExerciseService, WorkoutExerciseService>();
+builder.Services.AddScoped<IMealLogService, MealLogService>();
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
+builder.Services.AddScoped<IProgressLogService, ProgressLogService>();
+builder.Services.AddScoped<IVideoContentService, VideoContentService>();
+builder.Services.AddScoped<IShopService, ShopService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddSingleton<StripePaymentIntentService>();
+builder.Services.AddSingleton<JwtService>();
 
-// JWT authentication
+// AutoMapper
+builder.Services.AddAutoMapper(typeof(Program));
+
+// Контролери
+builder.Services.AddControllers();
+
+// Аутентифікація JWT
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
     {
@@ -36,41 +98,25 @@ builder.Services.AddAuthentication("Bearer")
         };
     });
 
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Статичні файли (на всякий випадок)
+app.UseStaticFiles();
+
+// Swagger — завжди доступний під час розробки
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "All4GYM API v1");
+    c.RoutePrefix = "swagger"; // або "" якщо хочеш Swagger на головній
+});
 
-app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-    {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast")
-    .WithOpenApi();
+// Middleware
+// app.UseHttpsRedirection(); // вимкнено для локального HTTP
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

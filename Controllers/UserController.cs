@@ -2,6 +2,7 @@ using All4GYM.Dtos;
 using All4GYM.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 using System.Security.Claims;
 
 namespace All4GYM.Controllers;
@@ -17,8 +18,12 @@ public class UserController : ControllerBase
         _userService = userService;
     }
 
+    /// <summary>
+    /// Реєстрація нового користувача.
+    /// </summary>
     [HttpPost("register")]
     [AllowAnonymous]
+    [SwaggerOperation(Summary = "Реєстрація", Description = "Доступно всім")]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
     {
         try
@@ -32,8 +37,12 @@ public class UserController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Вхід користувача та отримання JWT-токена.
+    /// </summary>
     [HttpPost("login")]
     [AllowAnonymous]
+    [SwaggerOperation(Summary = "Авторизація", Description = "Доступно всім")]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
         try
@@ -47,8 +56,12 @@ public class UserController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Отримати дані профілю поточного користувача.
+    /// </summary>
     [HttpGet("profile")]
     [Authorize]
+    [SwaggerOperation(Summary = "Отримати профіль", Description = "Доступно авторизованому користувачу")]
     public async Task<IActionResult> GetProfile()
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -56,8 +69,12 @@ public class UserController : ControllerBase
         return Ok(user);
     }
 
+    /// <summary>
+    /// Оновити дані профілю поточного користувача.
+    /// </summary>
     [HttpPut("profile")]
     [Authorize]
+    [SwaggerOperation(Summary = "Оновити профіль", Description = "Доступно авторизованому користувачу")]
     public async Task<IActionResult> UpdateProfile([FromBody] RegisterUserDto dto)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -65,8 +82,12 @@ public class UserController : ControllerBase
         return Ok(updated);
     }
 
+    /// <summary>
+    /// Видалити свій обліковий запис.
+    /// </summary>
     [HttpDelete("delete")]
     [Authorize]
+    [SwaggerOperation(Summary = "Видалити свій акаунт", Description = "Доступно авторизованому користувачу")]
     public async Task<IActionResult> DeleteOwnAccount()
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -74,8 +95,12 @@ public class UserController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Отримати список усіх користувачів (тільки Admin).
+    /// </summary>
     [HttpGet("all")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,SystemAdmin")]
+    [SwaggerOperation(Summary = "Отримати всіх користувачів", Description = "Доступно лише для ролі Admin")]
     public async Task<IActionResult> GetAllUsers()
     {
         var users = await _userService.GetAllAsync();
