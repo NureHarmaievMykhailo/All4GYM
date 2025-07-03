@@ -44,10 +44,10 @@ public class WorkoutController : ControllerBase
     }
 
     /// <summary>
-    /// Створити тренування (Coach, Admin).
+    /// Створити тренування (User, Coach, Admin).
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Coach,Admin")]
+    [Authorize(Roles = "User,Coach,Admin")]
     [SwaggerOperation(Summary = "Створити тренування")]
     public async Task<IActionResult> Create(CreateWorkoutDto dto)
     {
@@ -56,10 +56,10 @@ public class WorkoutController : ControllerBase
     }
 
     /// <summary>
-    /// Оновити тренування (Coach, Admin).
+    /// Оновити тренування (User, Coach, Admin).
     /// </summary>
     [HttpPut("{id}")]
-    [Authorize(Roles = "Coach,Admin")]
+    [Authorize(Roles = "User,Coach,Admin")]
     [SwaggerOperation(Summary = "Оновити тренування")]
     public async Task<IActionResult> Update(int id, CreateWorkoutDto dto)
     {

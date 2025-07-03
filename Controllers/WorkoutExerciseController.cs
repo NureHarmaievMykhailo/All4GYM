@@ -33,10 +33,10 @@ public class WorkoutExerciseController : ControllerBase
     }
 
     /// <summary>
-    /// Додати вправу до тренування (Coach, Admin).
+    /// Додати вправу до тренування (User,Coach, Admin).
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Coach,Admin")]
+    [Authorize(Roles = "User,Coach,Admin")]
     [SwaggerOperation(Summary = "Додати вправу до тренування")]
     public async Task<IActionResult> Add(int workoutId, [FromBody] AddWorkoutExerciseDto dto)
     {
@@ -45,10 +45,10 @@ public class WorkoutExerciseController : ControllerBase
     }
 
     /// <summary>
-    /// Видалити вправу з тренування (Coach, Admin).
+    /// Видалити вправу з тренування (User,Coach, Admin).
     /// </summary>
     [HttpDelete("{exerciseId}")]
-    [Authorize(Roles = "Coach,Admin")]
+    [Authorize(Roles = "User,Coach,Admin")]
     [SwaggerOperation(Summary = "Видалити вправу з тренування")]
     public async Task<IActionResult> Remove(int workoutId, int exerciseId)
     {
