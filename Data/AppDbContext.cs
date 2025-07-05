@@ -37,7 +37,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<WorkoutExercise>()
             .HasKey(we => new { we.WorkoutId, we.ExerciseId });
 
-        // Вимикаємо каскадне видалення для користувачів у сутностях, що викликають конфлікт
+        // Інші обмеження
         modelBuilder.Entity<Booking>()
             .HasOne(b => b.User)
             .WithMany(u => u.Bookings)

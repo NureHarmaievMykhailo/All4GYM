@@ -20,16 +20,16 @@ public class MealLogController : ControllerBase
     }
 
     private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
+    
     /// <summary>
-    /// Отримати всі записи харчування користувача.
+    /// Отримати всі записи харчування користувача або за певною датою.
     /// </summary>
     [HttpGet]
     [Authorize(Roles = "User,Nutritionist,Admin")]
-    [SwaggerOperation(Summary = "Отримати харчовий щоденник", Description = "Доступно для ролей: User, Nutritionist, Admin")]
-    public async Task<IActionResult> GetAll()
+    [SwaggerOperation(Summary = "Отримати харчовий щоденник", Description = "Можна вказати параметр дати")]
+    public async Task<IActionResult> GetAll([FromQuery] DateTime? date = null)
     {
-        var logs = await _service.GetAllAsync(GetUserId());
+        var logs = await _service.GetMealLogsAsync(GetUserId(), date);
         return Ok(logs);
     }
 
@@ -38,7 +38,7 @@ public class MealLogController : ControllerBase
     /// </summary>
     [HttpGet("{id}")]
     [Authorize(Roles = "User,Nutritionist,Admin")]
-    [SwaggerOperation(Summary = "Отримати запис за ID", Description = "Доступно для ролей: User, Nutritionist, Admin")]
+    [SwaggerOperation(Summary = "Отримати запис за ID")]
     public async Task<IActionResult> GetById(int id)
     {
         var log = await _service.GetByIdAsync(id, GetUserId());
@@ -50,8 +50,8 @@ public class MealLogController : ControllerBase
     /// </summary>
     [HttpPost]
     [Authorize(Roles = "User,Nutritionist")]
-    [SwaggerOperation(Summary = "Створити новий запис харчування", Description = "Доступно для ролей: User, Nutritionist")]
-    public async Task<IActionResult> Create(CreateMealLogDto dto)
+    [SwaggerOperation(Summary = "Створити новий запис харчування")]
+    public async Task<IActionResult> Create([FromBody] CreateMealLogDto dto)
     {
         var created = await _service.CreateAsync(dto, GetUserId());
         return Ok(created);
@@ -61,9 +61,9 @@ public class MealLogController : ControllerBase
     /// Оновити запис харчування.
     /// </summary>
     [HttpPut("{id}")]
-    [Authorize(Roles = "User,Nutritionist")]
-    [SwaggerOperation(Summary = "Оновити запис харчування", Description = "Доступно для ролей: User, Nutritionist")]
-    public async Task<IActionResult> Update(int id, CreateMealLogDto dto)
+    [Authorize(Roles = "User,Nutritionist,Admin")]
+    [SwaggerOperation(Summary = "Оновити запис харчування")]
+    public async Task<IActionResult> Update(int id, [FromBody] CreateMealLogDto dto)
     {
         var updated = await _service.UpdateAsync(id, dto, GetUserId());
         return Ok(updated);
@@ -74,10 +74,11 @@ public class MealLogController : ControllerBase
     /// </summary>
     [HttpDelete("{id}")]
     [Authorize(Roles = "User,Admin")]
-    [SwaggerOperation(Summary = "Видалити запис харчування", Description = "Доступно для ролей: User, Admin")]
+    [SwaggerOperation(Summary = "Видалити запис харчування")]
     public async Task<IActionResult> Delete(int id)
     {
         await _service.DeleteAsync(id, GetUserId());
         return NoContent();
     }
+    
 }

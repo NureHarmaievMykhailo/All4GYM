@@ -76,6 +76,8 @@ builder.Services.AddSingleton<StripePaymentIntentService>();
 builder.Services.AddSingleton<JwtService>();
 builder.Services.AddScoped<IGroupSessionService, GroupSessionService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<INutritionService, NutritionService>();
+builder.Services.AddScoped<IFoodItemService, FoodItemService>();
 
 // AutoMapper
 builder.Services.AddAutoMapper(typeof(Program));
