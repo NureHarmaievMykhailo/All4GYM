@@ -8,7 +8,7 @@ namespace All4GYM.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin,Nutritionist")]
+[Authorize(Roles = "User,Admin,Nutritionist")]
 public class FoodItemController : ControllerBase
 {
     private readonly IFoodItemService _service;

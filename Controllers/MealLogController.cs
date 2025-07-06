@@ -51,7 +51,7 @@ public class MealLogController : ControllerBase
     [HttpPost]
     [Authorize(Roles = "User,Nutritionist")]
     [SwaggerOperation(Summary = "Створити новий запис харчування")]
-    public async Task<IActionResult> Create([FromBody] CreateMealLogDto dto)
+    public async Task<IActionResult> Create(CreateMealLogDto dto)
     {
         var created = await _service.CreateAsync(dto, GetUserId());
         return Ok(created);
@@ -63,7 +63,7 @@ public class MealLogController : ControllerBase
     [HttpPut("{id}")]
     [Authorize(Roles = "User,Nutritionist,Admin")]
     [SwaggerOperation(Summary = "Оновити запис харчування")]
-    public async Task<IActionResult> Update(int id, [FromBody] CreateMealLogDto dto)
+    public async Task<IActionResult> Update(int id, CreateMealLogDto dto)
     {
         var updated = await _service.UpdateAsync(id, dto, GetUserId());
         return Ok(updated);

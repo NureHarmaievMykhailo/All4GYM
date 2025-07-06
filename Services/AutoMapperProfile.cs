@@ -10,20 +10,37 @@ public class AutoMapperProfile : Profile
     {
         CreateMap<User, UserDto>()
             .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.Name));
+
         CreateMap<TrainingProgram, TrainingProgramDto>();
         CreateMap<Workout, WorkoutDto>();
         CreateMap<Exercise, ExerciseDto>();
         CreateMap<CreateExerciseDto, Exercise>();
-        CreateMap<MealLog, MealLogDto>();
+
+        CreateMap<MealLog, MealLogDto>()
+            .ForMember(dest => dest.FoodItemName, opt => opt.MapFrom(src => src.FoodItem.Name));
         CreateMap<CreateMealLogDto, MealLog>();
+
         CreateMap<Subscription, SubscriptionDto>();
         CreateMap<CreateSubscriptionDto, Subscription>();
+
         CreateMap<ProgressLog, ProgressLogDto>();
         CreateMap<CreateProgressLogDto, ProgressLog>();
+
         CreateMap<VideoContent, VideoContentDto>();
         CreateMap<CreateVideoContentDto, VideoContent>();
+
         CreateMap<ShopProduct, ShopProductDto>();
         CreateMap<CreateShopProductDto, ShopProduct>();
+        
+        CreateMap<CreateFoodItemDto, FoodItem>();
+        CreateMap<FoodItem, FoodItemDto>();
 
+        CreateMap<Booking, BookingDto>();
+        CreateMap<CreateBookingDto, Booking>();
+
+        CreateMap<GroupSession, GroupSessionDto>();
+
+        //CreateMap<Order, OrderDto>();
+        //CreateMap<OrderProduct, OrderProductDto>();
     }
 }

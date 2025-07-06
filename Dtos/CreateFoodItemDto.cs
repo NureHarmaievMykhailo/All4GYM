@@ -9,19 +9,19 @@ public class CreateFoodItemDto
     [JsonPropertyName("name")]
     public string Name { get; set; } = null!;
 
-    [Range(0, 8000, ErrorMessage = "Калорійність має бути від 0 до 8000")]
+    [Range(0, 900, ErrorMessage = "Калорійність має бути від 0 до 900")]
     [JsonPropertyName("calories")]
     public int Calories { get; set; }
 
-    [Range(0, 300, ErrorMessage = "Білків не може бути більше 300г")]
+    [Range(0, 100, ErrorMessage = "Білків не може бути більше 100г")]
     [JsonPropertyName("proteins")]
     public float Proteins { get; set; }
 
-    [Range(0, 300, ErrorMessage = "Жирів не може бути більше 300г")]
+    [Range(0, 100, ErrorMessage = "Жирів не може бути більше 100г")]
     [JsonPropertyName("fats")]
     public float Fats { get; set; }
 
-    [Range(0, 500, ErrorMessage = "Вуглеводів не може бути більше 500г")]
+    [Range(0, 100, ErrorMessage = "Вуглеводів не може бути більше 100г")]
     [JsonPropertyName("carbs")]
     public float Carbs { get; set; }
 }

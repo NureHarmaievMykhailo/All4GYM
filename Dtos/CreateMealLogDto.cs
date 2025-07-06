@@ -16,6 +16,7 @@ public class CreateMealLogDto
     public float Grams { get; set; }
 
     [Required]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     [JsonPropertyName("mealType")]
     public MealType MealType { get; set; }
 
