@@ -1,65 +1,54 @@
 using All4GYM.Data;
+using All4GYM.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Stripe;
-using Swashbuckle.AspNetCore.Annotations;
-using Microsoft.AspNetCore.Authorization;
+using Stripe.Checkout;
+using Stripe.Events;
 
 namespace All4GYM.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class PaymentWebhookController : ControllerBase
+public class StripeWebhookController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly IConfiguration _config;
 
-    public PaymentWebhookController(AppDbContext context, IConfiguration config)
+    public StripeWebhookController(AppDbContext context, IConfiguration config)
     {
         _context = context;
         _config = config;
     }
 
-    /// <summary>
-    /// Webhook Stripe. Оновлює статус платежу в БД.
-    /// </summary>
-    /// <returns>200 OK</returns>
     [HttpPost]
-    [AllowAnonymous]
-    [SwaggerOperation(
-        Summary = "Webhook від Stripe",
-        Description = "Цей ендпоінт приймає події Stripe (наприклад, payment_intent.succeeded) і оновлює статус платежу в БД."
-    )]
-    public async Task<IActionResult> StripeWebhook()
+    public async Task<IActionResult> HandleStripeWebhook()
     {
         var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
-
-        var stripeSignature = Request.Headers["Stripe-Signature"];
-        var endpointSecret = _config["Stripe:WebhookSecret"]; // appsettings.json
+        var signature = Request.Headers["Stripe-Signature"];
+        var secret = _config["Stripe:WebhookSecret"];
 
         Event stripeEvent;
 
         try
         {
-            stripeEvent = EventUtility.ConstructEvent(json, stripeSignature, endpointSecret);
+            stripeEvent = EventUtility.ConstructEvent(json, signature, secret);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            return BadRequest($"⚠️ Webhook error: {e.Message}");
+            return BadRequest($"⚠️ Webhook error: {ex.Message}");
         }
 
-        if (stripeEvent.Type == "payment_intent.succeeded")
+        if (stripeEvent.Type == "checkout.session.completed")
         {
-            var intent = stripeEvent.Data.Object as PaymentIntent;
-
-            if (intent is not null)
+            var session = stripeEvent.Data.Object as Session;
+            if (session != null && session.CustomerEmail != null)
             {
-                var payment = await _context.Payments
-                    .FirstOrDefaultAsync(p => p.StripePaymentId == intent.Id);
-
-                if (payment is not null)
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == session.CustomerEmail);
+                if (user != null)
                 {
-                    payment.Status = "Succeeded";
+                    user.HasActiveSubscription = true;
+                    user.SubscriptionTier = ExtractTierFromPriceId(session); // реалізуй цю функцію
                     await _context.SaveChangesAsync();
                 }
             }
@@ -67,4 +56,22 @@ public class PaymentWebhookController : ControllerBase
 
         return Ok();
     }
+
+    private SubscriptionTier ExtractTierFromPriceId(Session session)
+    {
+        if (session.Metadata.TryGetValue("tier", out var tierValue))
+        {
+            return tierValue.ToLower() switch
+            {
+                "basic" => SubscriptionTier.Basic,
+                "pro" => SubscriptionTier.Pro,
+                "premium" => SubscriptionTier.Premium,
+                _ => SubscriptionTier.Basic
+            };
+        }
+
+        // Якщо немає метаданих — резервний варіант за замовчуванням
+        return SubscriptionTier.Basic;
+    }
+
 }

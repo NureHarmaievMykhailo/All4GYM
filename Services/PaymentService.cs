@@ -23,11 +23,10 @@ public class PaymentService : IPaymentService
                         .FirstOrDefaultAsync(o => o.Id == dto.OrderId && o.UserId == userId)
                     ?? throw new Exception("Замовлення не знайдено або не належить вам");
 
-        // створення Stripe PaymentIntent
         var amountInCents = (long)(order.TotalAmount * 100);
+
         var intent = await _stripe.CreateAsync(amountInCents, "usd", order.Id.ToString());
 
-        // зберігаємо платіж у БД
         var payment = new Payment
         {
             UserId = userId,
@@ -41,6 +40,17 @@ public class PaymentService : IPaymentService
         _context.Payments.Add(payment);
         await _context.SaveChangesAsync();
 
-        return new PaymentDto { ClientSecret = intent.ClientSecret };
+        return new PaymentDto
+        {
+            ClientSecret = intent.ClientSecret
+        };
+    }
+
+    public async Task<string> CreateSubscriptionCheckoutSessionAsync(CreateSubscriptionPaymentDto dto, string userEmail)
+    {
+        var successUrl = "http://localhost:5263/SubscriptionSuccess";
+        var cancelUrl = "http://localhost:5263/SubscriptionCancel";
+
+        return await _stripe.CreateCheckoutSessionAsync(userEmail, dto.Tier, successUrl, cancelUrl);
     }
 }

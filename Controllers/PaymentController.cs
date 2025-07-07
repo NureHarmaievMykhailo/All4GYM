@@ -1,5 +1,4 @@
-using All4GYM.Dtos;
-using All4GYM.Services;
+using All4GYM.Services.Stripe;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -8,31 +7,44 @@ using System.Security.Claims;
 namespace All4GYM.Controllers;
 
 [ApiController]
-[Authorize(Roles = "User")]
 [Route("api/[controller]")]
-public class PaymentController : ControllerBase
+[Authorize(Roles = "User")]
+public class CheckoutController : ControllerBase
 {
-    private readonly IPaymentService _service;
+    private readonly StripePaymentIntentService _stripeService;
 
-    public PaymentController(IPaymentService service)
+    public CheckoutController(StripePaymentIntentService stripeService)
     {
-        _service = service;
+        _stripeService = stripeService;
     }
 
-    private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    private string GetUserEmail() =>
+        User.FindFirstValue(ClaimTypes.Email)
+        ?? throw new Exception("Email користувача не знайдено");
 
     /// <summary>
-    /// Створити Stripe-платіж для замовлення.
+    /// Створити Stripe Checkout-сесію для підписки.
     /// </summary>
-    /// <param name="dto">OrderId замовлення</param>
-    [HttpPost]
+    /// <param name="tier">Тип підписки: basic, pro, premium</param>
+    [HttpPost("{tier}")]
     [SwaggerOperation(
-        Summary = "Ініціювати оплату",
-        Description = "Доступно лише для ролі User. Повертає Stripe ClientSecret для клієнтської оплати."
+        Summary = "Створити Stripe Checkout-сесію",
+        Description = "Повертає URL для перенаправлення користувача до Stripe Checkout"
     )]
-    public async Task<IActionResult> Create(CreatePaymentDto dto)
+    public async Task<IActionResult> Create(string tier)
     {
-        var result = await _service.CreateAsync(dto, GetUserId());
-        return Ok(result);
+        var email = GetUserEmail();
+        var successUrl = "http://localhost:5263/SubscriptionSuccess";
+        var cancelUrl = "http://localhost:5263/SubscriptionCancel";
+
+        try
+        {
+            var sessionUrl = await _stripeService.CreateCheckoutSessionAsync(email, tier, successUrl, cancelUrl);
+            return Ok(new { url = sessionUrl });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = $"Помилка створення сесії: {ex.Message}" });
+        }
     }
 }

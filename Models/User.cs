@@ -9,6 +9,9 @@ public class User
 
     public int RoleId { get; set; }
     public Role Role { get; set; } = null!;
+    
+    public bool HasActiveSubscription { get; set; } = false;
+    public SubscriptionTier SubscriptionTier { get; set; } = SubscriptionTier.Basic;
 
     public ICollection<TrainingProgram> TrainingPrograms { get; set; } = new List<TrainingProgram>();
     public ICollection<MealLog> MealLogs { get; set; } = new List<MealLog>();
