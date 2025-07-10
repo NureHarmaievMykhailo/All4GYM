@@ -22,7 +22,8 @@ public class JwtService
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Name, user.FullName),
-            new Claim(ClaimTypes.Role, user.Role?.Name ?? "User")
+            new Claim(ClaimTypes.Role, user.Role?.Name ?? "User"),
+            new Claim("SubscriptionTier", user.SubscriptionTier.ToString())
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));

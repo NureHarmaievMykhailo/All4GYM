@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Stripe;
 using Stripe.Checkout;
-using Stripe.Events;
 
 namespace All4GYM.Controllers;
 
@@ -28,6 +27,9 @@ public class StripeWebhookController : ControllerBase
         var signature = Request.Headers["Stripe-Signature"];
         var secret = _config["Stripe:WebhookSecret"];
 
+        Console.WriteLine("📥 Webhook received. Raw body:");
+        Console.WriteLine(json);
+
         Event stripeEvent;
 
         try
@@ -36,31 +38,69 @@ public class StripeWebhookController : ControllerBase
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"⚠️ Stripe webhook signature error: {ex.Message}");
             return BadRequest($"⚠️ Webhook error: {ex.Message}");
         }
 
         if (stripeEvent.Type == "checkout.session.completed")
         {
             var session = stripeEvent.Data.Object as Session;
-            if (session != null && session.CustomerEmail != null)
+
+            Console.WriteLine($"✅ Stripe event: {stripeEvent.Type}");
+            Console.WriteLine($"📧 Session Email: {session?.CustomerEmail}");
+
+            if (session?.CustomerEmail == null)
             {
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == session.CustomerEmail);
-                if (user != null)
-                {
-                    user.HasActiveSubscription = true;
-                    user.SubscriptionTier = ExtractTierFromPriceId(session); // реалізуй цю функцію
-                    await _context.SaveChangesAsync();
-                }
+                Console.WriteLine("❌ Stripe session has no email.");
+                return BadRequest("❌ Stripe session has no email.");
             }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == session.CustomerEmail);
+            if (user == null)
+            {
+                Console.WriteLine($"❌ User with email {session.CustomerEmail} not found.");
+                return BadRequest("❌ Користувача не знайдено");
+            }
+
+            var tier = ExtractTierFromSession(session);
+            Console.WriteLine($"📦 Subscription tier from session: {tier}");
+
+            var existing = await _context.Subscriptions
+                .Where(s => s.UserId == user.Id && s.IsActive)
+                .ToListAsync();
+
+            foreach (var sub in existing)
+            {
+                sub.IsActive = false;
+                Console.WriteLine($"➡️ Subscription {sub.Id} marked inactive for user {user.Email}");
+            }
+
+            var now = DateTime.UtcNow;
+            var subscription = new All4GYM.Models.Subscription
+            {
+                UserId = user.Id,
+                Type = tier.ToString(),
+                StartDate = now,
+                EndDate = now.AddMonths(1),
+                IsActive = true
+            };
+
+            _context.Subscriptions.Add(subscription);
+            user.HasActiveSubscription = true;
+            user.SubscriptionTier = tier;
+
+            await _context.SaveChangesAsync();
+            Console.WriteLine($"✅ New subscription {tier} saved for user {user.Email}");
         }
 
         return Ok();
     }
 
-    private SubscriptionTier ExtractTierFromPriceId(Session session)
+    private SubscriptionTier ExtractTierFromSession(Session session)
     {
         if (session.Metadata.TryGetValue("tier", out var tierValue))
         {
+            Console.WriteLine($"🔍 Extracted tier from metadata: {tierValue}");
             return tierValue.ToLower() switch
             {
                 "basic" => SubscriptionTier.Basic,
@@ -70,8 +110,7 @@ public class StripeWebhookController : ControllerBase
             };
         }
 
-        // Якщо немає метаданих — резервний варіант за замовчуванням
+        Console.WriteLine("⚠️ No tier found in session metadata. Defaulting to Basic.");
         return SubscriptionTier.Basic;
     }
-
 }

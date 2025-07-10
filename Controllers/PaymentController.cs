@@ -1,6 +1,8 @@
+using All4GYM.Data;
 using All4GYM.Services.Stripe;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Security.Claims;
 
@@ -12,10 +14,12 @@ namespace All4GYM.Controllers;
 public class CheckoutController : ControllerBase
 {
     private readonly StripePaymentIntentService _stripeService;
+    private readonly AppDbContext _context;
 
-    public CheckoutController(StripePaymentIntentService stripeService)
+    public CheckoutController(StripePaymentIntentService stripeService, AppDbContext context)
     {
         _stripeService = stripeService;
+        _context = context;
     }
 
     private string GetUserEmail() =>
@@ -34,6 +38,21 @@ public class CheckoutController : ControllerBase
     public async Task<IActionResult> Create(string tier)
     {
         var email = GetUserEmail();
+
+        // Перевірка на активну підписку
+        var user = await _context.Users.Include(u => u.Subscriptions)
+                                       .FirstOrDefaultAsync(u => u.Email == email);
+
+        if (user == null)
+            return NotFound(new { error = "Користувача не знайдено" });
+
+        var hasActive = user.Subscriptions.Any(s => s.IsActive);
+
+        if (hasActive)
+        {
+            return BadRequest(new { error = "У вас вже є активна підписка. Щоб змінити рівень, спершу скасуйте поточну." });
+        }
+
         var successUrl = "http://localhost:5263/SubscriptionSuccess";
         var cancelUrl = "http://localhost:5263/SubscriptionCancel";
 

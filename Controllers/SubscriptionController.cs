@@ -19,7 +19,9 @@ public class SubscriptionController : ControllerBase
         _service = service;
     }
 
-    private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    private int GetUserId() =>
+        int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)
+                  ?? throw new Exception("UserId не знайдено в токені"));
 
     /// <summary>
     /// Отримати всі підписки поточного користувача.
@@ -93,4 +95,20 @@ public class SubscriptionController : ControllerBase
         await _service.DeleteAsync(id, GetUserId());
         return NoContent();
     }
+    
+    /// <summary>
+    /// Скасувати поточну активну підписку користувача.
+    /// </summary>
+    [HttpPost("cancel")]
+    [Authorize(Roles = "User")]
+    [SwaggerOperation(
+        Summary = "Скасувати активну підписку",
+        Description = "Скасовує чинну активну підписку користувача"
+    )]
+    public async Task<IActionResult> Cancel()
+    {
+        await _service.CancelAsync(GetUserId());
+        return Ok(new { message = "Підписку скасовано" });
+    }
+    
 }

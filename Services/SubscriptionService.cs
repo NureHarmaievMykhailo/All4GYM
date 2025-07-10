@@ -71,4 +71,27 @@ public class SubscriptionService : ISubscriptionService
         _context.Subscriptions.Remove(sub);
         await _context.SaveChangesAsync();
     }
+    
+    public async Task CancelAsync(int userId)
+    {
+        var activeSubs = await _context.Subscriptions
+            .Where(s => s.UserId == userId && s.IsActive)
+            .ToListAsync();
+
+        if (!activeSubs.Any())
+            throw new Exception("Активна підписка не знайдена.");
+
+        foreach (var sub in activeSubs)
+            sub.IsActive = false;
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is not null)
+        {
+            user.HasActiveSubscription = false;
+            user.SubscriptionTier = SubscriptionTier.Basic;
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
 }

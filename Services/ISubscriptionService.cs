@@ -9,4 +9,6 @@ public interface ISubscriptionService
     Task<SubscriptionDto> CreateAsync(CreateSubscriptionDto dto, int userId);
     Task<SubscriptionDto> UpdateAsync(int id, CreateSubscriptionDto dto, int userId);
     Task DeleteAsync(int id, int userId);
+    Task CancelAsync(int userId);
+
 }
