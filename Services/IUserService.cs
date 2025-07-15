@@ -1,4 +1,5 @@
 using All4GYM.Dtos;
+using All4GYM.Models;
 
 namespace All4GYM.Services;
 
@@ -10,4 +11,5 @@ public interface IUserService
     Task<UserDto> UpdateAsync(int id, RegisterUserDto dto);
     Task DeleteAsync(int id);
     Task<List<UserDto>> GetAllAsync();
+    Task<UserDto> GetUserWithSubscriptionAsync(int userId);
 }

@@ -86,6 +86,29 @@ public class UserService : IUserService
         var users = await _context.Users.Include(u => u.Role).ToListAsync();
         return _mapper.Map<List<UserDto>>(users);
     }
+    
+    public async Task<UserDto> GetUserWithSubscriptionAsync(int userId)
+    {
+        var user = await _context.Users
+                       .Include(u => u.Role)
+                       .FirstOrDefaultAsync(u => u.Id == userId)
+                   ?? throw new Exception("Користувача не знайдено");
 
+        var dto = _mapper.Map<UserDto>(user);
 
+        var activeSub = await _context.Subscriptions
+            .Where(s => s.UserId == userId && s.IsActive && s.EndDate > DateTime.UtcNow)
+            .OrderByDescending(s => s.EndDate)
+            .FirstOrDefaultAsync();
+
+        dto.HasActiveSubscription = activeSub != null;
+
+        if (Enum.TryParse<SubscriptionTier>(activeSub?.Type, out var parsedTier))
+            dto.SubscriptionTier = parsedTier;
+        else
+            dto.SubscriptionTier = SubscriptionTier.Basic;
+
+        return dto;
+    }
+    
 }

@@ -65,8 +65,16 @@ public class UserController : ControllerBase
     public async Task<IActionResult> GetProfile()
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var user = await _userService.GetByIdAsync(userId);
-        return Ok(user);
+        var user = await _userService.GetUserWithSubscriptionAsync(userId);
+
+        return Ok(new
+        {
+            fullName = user.FullName,
+            email = user.Email,
+            role = user.Role,
+            hasActiveSubscription = user.HasActiveSubscription,
+            subscriptionTier = user.SubscriptionTier.ToString()
+        });
     }
 
     /// <summary>
@@ -106,4 +114,5 @@ public class UserController : ControllerBase
         var users = await _userService.GetAllAsync();
         return Ok(users);
     }
+    
 }

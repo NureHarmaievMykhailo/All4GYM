@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using All4GYM.Data;
 using All4GYM.Services;
@@ -6,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +22,7 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "All4GYM API",
-        Version = "1.0", // краще без "v"
+        Version = "1.0",
         Description = "Backend API для All4GYM",
         Contact = new OpenApiContact
         {
@@ -27,7 +30,7 @@ builder.Services.AddSwaggerGen(c =>
             Email = "support@all4gym.com"
         }
     });
-    
+
     c.EnableAnnotations();
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -93,15 +96,59 @@ builder.Services.AddAuthentication("Bearer")
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidateAudience = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidateAudience = true,
             ValidAudience = builder.Configuration["Jwt:Audience"],
             ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
-            ValidateIssuerSigningKey = true
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
+            ),
+            NameClaimType = ClaimTypes.Name,
+            RoleClaimType = ClaimTypes.Role
+        };
+
+        options.MapInboundClaims = false;
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                if (context.Request.Cookies.TryGetValue("jwt", out var jwt))
+                {
+                    context.Token = jwt;
+                }
+                return Task.CompletedTask;
+            },
+
+            OnTokenValidated = context =>
+            {
+                if (context.Principal?.Identity is ClaimsIdentity identity)
+                {
+                    var jwtToken = context.SecurityToken as JwtSecurityToken;
+                    if (jwtToken != null)
+                    {
+                        // Витягуємо claims напряму з JWT
+                        var hasActive = jwtToken.Claims.FirstOrDefault(c => c.Type == "HasActiveSubscription")?.Value;
+                        var tier = jwtToken.Claims.FirstOrDefault(c => c.Type == "SubscriptionTier")?.Value;
+
+                        if (!string.IsNullOrEmpty(hasActive))
+                        {
+                            identity.AddClaim(new Claim(ClaimTypes.UserData, hasActive));
+                        }
+
+                        if (!string.IsNullOrEmpty(tier))
+                        {
+                            identity.AddClaim(new Claim("CustomTier", tier));
+                        }
+                    }
+                }
+
+                return Task.CompletedTask;
+            }
         };
     });
+
 
 builder.Services.AddAuthorization();
 
@@ -112,18 +159,29 @@ builder.Services
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
-
 var app = builder.Build();
 
-// Статичні файли (на всякий випадок)
+// Статичні файли
 app.UseStaticFiles();
 
-// Swagger — завжди доступний під час розробки
+// Додаємо cookie → JWT токен у заголовок
+app.Use(async (context, next) =>
+{
+    var token = context.Request.Cookies["jwt"];
+    if (!string.IsNullOrEmpty(token))
+    {
+        context.Request.Headers["Authorization"] = $"Bearer {token}";
+    }
+
+    await next();
+});
+
+// Swagger
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "All4GYM API v1");
-    c.RoutePrefix = "swagger"; // або "" якщо хочеш Swagger на головній
+    c.RoutePrefix = "swagger";
 });
 
 // Middleware

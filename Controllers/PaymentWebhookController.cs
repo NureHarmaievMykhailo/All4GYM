@@ -65,16 +65,6 @@ public class StripeWebhookController : ControllerBase
             var tier = ExtractTierFromSession(session);
             Console.WriteLine($"📦 Subscription tier from session: {tier}");
 
-            var existing = await _context.Subscriptions
-                .Where(s => s.UserId == user.Id && s.IsActive)
-                .ToListAsync();
-
-            foreach (var sub in existing)
-            {
-                sub.IsActive = false;
-                Console.WriteLine($"➡️ Subscription {sub.Id} marked inactive for user {user.Email}");
-            }
-
             var now = DateTime.UtcNow;
             var subscription = new All4GYM.Models.Subscription
             {

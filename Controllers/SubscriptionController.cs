@@ -1,7 +1,10 @@
+using All4GYM.Data;
 using All4GYM.Dtos;
+using All4GYM.Models;
 using All4GYM.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Security.Claims;
 
@@ -13,10 +16,17 @@ namespace All4GYM.Controllers;
 public class SubscriptionController : ControllerBase
 {
     private readonly ISubscriptionService _service;
+    private readonly JwtService _jwtService;
+    private readonly AppDbContext _context;
 
-    public SubscriptionController(ISubscriptionService service)
+    public SubscriptionController(
+        ISubscriptionService service,
+        JwtService jwtService,
+        AppDbContext context)
     {
         _service = service;
+        _jwtService = jwtService;
+        _context = context;
     }
 
     private int GetUserId() =>
@@ -95,7 +105,7 @@ public class SubscriptionController : ControllerBase
         await _service.DeleteAsync(id, GetUserId());
         return NoContent();
     }
-    
+
     /// <summary>
     /// Скасувати поточну активну підписку користувача.
     /// </summary>
@@ -103,12 +113,24 @@ public class SubscriptionController : ControllerBase
     [Authorize(Roles = "User")]
     [SwaggerOperation(
         Summary = "Скасувати активну підписку",
-        Description = "Скасовує чинну активну підписку користувача"
+        Description = "Скасовує чинну активну підписку користувача та повертає оновлений токен"
     )]
     public async Task<IActionResult> Cancel()
     {
-        await _service.CancelAsync(GetUserId());
-        return Ok(new { message = "Підписку скасовано" });
+        int userId = GetUserId();
+
+        await _service.CancelAsync(userId);
+
+        var updatedUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (updatedUser == null)
+            return Unauthorized("Користувача не знайдено");
+
+        var newToken = _jwtService.GenerateToken(updatedUser);
+
+        return Ok(new
+        {
+            message = "Підписку скасовано",
+            token = newToken
+        });
     }
-    
 }
