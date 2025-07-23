@@ -83,7 +83,7 @@ public class UserController : ControllerBase
     [HttpPut("profile")]
     [Authorize]
     [SwaggerOperation(Summary = "Оновити профіль", Description = "Доступно авторизованому користувачу")]
-    public async Task<IActionResult> UpdateProfile([FromBody] RegisterUserDto dto)
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileDto dto)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var updated = await _userService.UpdateAsync(userId, dto);

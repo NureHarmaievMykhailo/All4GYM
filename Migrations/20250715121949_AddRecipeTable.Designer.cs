@@ -4,6 +4,7 @@ using All4GYM.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace All4GYM.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250715121949_AddRecipeTable")]
+    partial class AddRecipeTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -459,9 +462,6 @@ namespace All4GYM.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("Age")
-                        .HasColumnType("int");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -470,26 +470,11 @@ namespace All4GYM.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Gender")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Goal")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("GymPassCode")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<bool>("HasActiveSubscription")
                         .HasColumnType("bit");
 
-                    b.Property<double?>("HeightCm")
-                        .HasColumnType("float");
-
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PreferredWorkoutDays")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("RoleId")
@@ -497,9 +482,6 @@ namespace All4GYM.Migrations
 
                     b.Property<int>("SubscriptionTier")
                         .HasColumnType("int");
-
-                    b.Property<double?>("WeightKg")
-                        .HasColumnType("float");
 
                     b.HasKey("Id");
 

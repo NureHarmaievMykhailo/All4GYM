@@ -30,7 +30,7 @@ public class UserService : IUserService
             FullName = dto.FullName,
             Email = dto.Email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-            RoleId = dto.RoleId ?? 1 // за замовчуванням — Client
+            RoleId = dto.RoleId ?? 1, // за замовчуванням — Client
         };
 
         _context.Users.Add(user);
@@ -50,23 +50,32 @@ public class UserService : IUserService
 
         return _jwtService.GenerateToken(user);
     }
-    
+
     public async Task<UserDto> GetByIdAsync(int id)
     {
         var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == id)
                    ?? throw new Exception("Користувача не знайдено");
         return _mapper.Map<UserDto>(user);
     }
-    
-    public async Task<UserDto> UpdateAsync(int id, RegisterUserDto dto)
+
+    public async Task<UserDto> UpdateAsync(int id, UpdateUserProfileDto dto)
     {
-        var user = await _context.Users.FindAsync(id) 
+        var user = await _context.Users.FindAsync(id)
                    ?? throw new Exception("Користувача не знайдено");
 
         user.FullName = dto.FullName;
         user.Email = dto.Email;
         if (!string.IsNullOrWhiteSpace(dto.Password))
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+
+        // Нові поля
+        user.Age = dto.Age;
+        user.HeightCm = dto.HeightCm;
+        user.WeightKg = dto.WeightKg;
+        user.Gender = dto.Gender;
+        user.Goal = dto.Goal;
+        user.PreferredWorkoutDays = dto.PreferredWorkoutDays;
+        user.GymPassCode = dto.GymPassCode;
 
         await _context.SaveChangesAsync();
         return _mapper.Map<UserDto>(user);
@@ -86,7 +95,7 @@ public class UserService : IUserService
         var users = await _context.Users.Include(u => u.Role).ToListAsync();
         return _mapper.Map<List<UserDto>>(users);
     }
-    
+
     public async Task<UserDto> GetUserWithSubscriptionAsync(int userId)
     {
         var user = await _context.Users
@@ -110,5 +119,4 @@ public class UserService : IUserService
 
         return dto;
     }
-    
 }

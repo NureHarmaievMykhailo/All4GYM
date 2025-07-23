@@ -42,5 +42,11 @@ public class AutoMapperProfile : Profile
 
         //CreateMap<Order, OrderDto>();
         //CreateMap<OrderProduct, OrderProductDto>();
+        
+        CreateMap<Recipe, RecipeDto>();
+        CreateMap<CreateRecipeDto, Recipe>();
+        
+        CreateMap<UpdateUserProfileDto, User>()
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
     }
 }

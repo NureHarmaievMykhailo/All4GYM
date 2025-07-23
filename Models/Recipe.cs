@@ -10,5 +10,5 @@ public class Recipe
     public float Proteins { get; set; }
     public float Fats { get; set; }
     public float Carbs { get; set; }
-    public string? ImageUrl { get; set; }
+    public string? ImageUrl { get; set; } = null!;
 }
