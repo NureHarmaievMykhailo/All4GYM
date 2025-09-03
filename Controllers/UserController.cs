@@ -73,7 +73,14 @@ public class UserController : ControllerBase
             email = user.Email,
             role = user.Role,
             hasActiveSubscription = user.HasActiveSubscription,
-            subscriptionTier = user.SubscriptionTier.ToString()
+            subscriptionTier = user.SubscriptionTier.ToString(),
+            age = user.Age,
+            heightCm = user.HeightCm,
+            weightKg = user.WeightKg,
+            gender = user.Gender,
+            goal = user.Goal,
+            preferredWorkoutDays = user.PreferredWorkoutDays,
+            gymPassCode = user.GymPassCode
         });
     }
 
