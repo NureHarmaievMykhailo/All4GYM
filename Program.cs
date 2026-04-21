@@ -11,36 +11,39 @@ using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Stripe ключ
 Stripe.StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 
-// Swagger + JWT підтримка
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(
+                "https://all4gymfrontend-production.up.railway.app"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
+// SWAGGER + JWT
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "All4GYM API",
         Version = "1.0",
-        Description = "Backend API для All4GYM",
-        Contact = new OpenApiContact
-        {
-            Name = "All4GYM Team",
-            Email = "support@all4gym.com"
-        }
+        Description = "Backend API для All4GYM"
     });
-
-    c.EnableAnnotations();
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        Description = "Введіть ваш JWT токен у форматі: Bearer {token}"
+        Scheme = "bearer"
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -59,11 +62,12 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// База даних
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")
+    ));
 
-// Сервіси
+// SERVICES
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITrainingProgramService, TrainingProgramService>();
 builder.Services.AddScoped<IWorkoutService, WorkoutService>();
@@ -76,21 +80,24 @@ builder.Services.AddScoped<IVideoContentService, VideoContentService>();
 builder.Services.AddScoped<IShopService, ShopService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
-builder.Services.AddSingleton<StripePaymentIntentService>();
-builder.Services.AddSingleton<JwtService>();
 builder.Services.AddScoped<IGroupSessionService, GroupSessionService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<INutritionService, NutritionService>();
 builder.Services.AddScoped<IFoodItemService, FoodItemService>();
 builder.Services.AddScoped<IRecipeService, RecipeService>();
 
-// AutoMapper
-builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddSingleton<StripePaymentIntentService>();
+builder.Services.AddSingleton<JwtService>();
+builder.Services.AddAutoMapper(cfg => {}, typeof(AutoMapperProfile));
 
-// Контролери
-builder.Services.AddControllers();
+// CONTROLLERS
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
-// Аутентифікація JWT
+// JWT AUTH
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
     {
@@ -98,13 +105,17 @@ builder.Services.AddAuthentication("Bearer")
         {
             ValidateIssuer = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
+
             ValidateAudience = true,
             ValidAudience = builder.Configuration["Jwt:Audience"],
+
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
+
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
             ),
+
             NameClaimType = ClaimTypes.Name,
             RoleClaimType = ClaimTypes.Role
         };
@@ -127,21 +138,20 @@ builder.Services.AddAuthentication("Bearer")
                 if (context.Principal?.Identity is ClaimsIdentity identity)
                 {
                     var jwtToken = context.SecurityToken as JwtSecurityToken;
+
                     if (jwtToken != null)
                     {
-                        // Витягуємо claims напряму з JWT
-                        var hasActive = jwtToken.Claims.FirstOrDefault(c => c.Type == "HasActiveSubscription")?.Value;
-                        var tier = jwtToken.Claims.FirstOrDefault(c => c.Type == "SubscriptionTier")?.Value;
+                        var hasActive = jwtToken.Claims
+                            .FirstOrDefault(c => c.Type == "HasActiveSubscription")?.Value;
+
+                        var tier = jwtToken.Claims
+                            .FirstOrDefault(c => c.Type == "SubscriptionTier")?.Value;
 
                         if (!string.IsNullOrEmpty(hasActive))
-                        {
-                            identity.AddClaim(new Claim(ClaimTypes.UserData, hasActive));
-                        }
+                            identity.AddClaim(new Claim("HasActiveSubscription", hasActive));
 
                         if (!string.IsNullOrEmpty(tier))
-                        {
-                            identity.AddClaim(new Claim("CustomTier", tier));
-                        }
+                            identity.AddClaim(new Claim("SubscriptionTier", tier));
                     }
                 }
 
@@ -150,25 +160,30 @@ builder.Services.AddAuthentication("Bearer")
         };
     });
 
-
 builder.Services.AddAuthorization();
-
-builder.Services
-    .AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    });
-
 var app = builder.Build();
 
-// Статичні файли
+// PIPELINE
+
 app.UseStaticFiles();
 
-// Додаємо cookie → JWT токен у заголовок
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "All4GYM API v1");
+    c.RoutePrefix = "swagger";
+});
+
+app.UseCors("AllowFrontend");
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+// JWT from cookie → header
 app.Use(async (context, next) =>
 {
     var token = context.Request.Cookies["jwt"];
+
     if (!string.IsNullOrEmpty(token))
     {
         context.Request.Headers["Authorization"] = $"Bearer {token}";
@@ -177,18 +192,6 @@ app.Use(async (context, next) =>
     await next();
 });
 
-// Swagger
-app.UseSwagger();
-app.UseSwaggerUI(c =>
-{
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "All4GYM API v1");
-    c.RoutePrefix = "swagger";
-});
-
-// Middleware
-// app.UseHttpsRedirection(); // вимкнено для локального HTTP
-app.UseAuthentication();
-app.UseAuthorization();
 app.MapControllers();
 
 app.Run();

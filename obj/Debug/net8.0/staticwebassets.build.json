@@ -1,11 +1,12 @@
 {
   "Version": 1,
-  "Hash": "sWptaxIE+sfzPwEbu0USnOT3ibzOxOgZyUmdDgLLamE=",
+  "Hash": "Q2+OiGmvZK6e3kUFdtdG/Lqdw9NRybgJpq50OSCJGBU=",
   "Source": "All4GYM",
   "BasePath": "_content/All4GYM",
   "Mode": "Default",
   "ManifestType": "Build",
   "ReferencedProjectsConfiguration": [],
   "DiscoveryPatterns": [],
-  "Assets": []
+  "Assets": [],
+  "Endpoints": []
 }
