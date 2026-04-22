@@ -48,8 +48,8 @@ public class PaymentService : IPaymentService
 
     public async Task<string> CreateSubscriptionCheckoutSessionAsync(CreateSubscriptionPaymentDto dto, string userEmail)
     {
-        var successUrl = "http://localhost:5263/SubscriptionSuccess";
-        var cancelUrl = "http://localhost:5263/SubscriptionCancel";
+        var successUrl = "https://all4gymfrontend-production.up.railway.app/SubscriptionSuccess";
+        var cancelUrl = "https://all4gymfrontend-production.up.railway.app/SubscriptionCancel";
 
         return await _stripe.CreateCheckoutSessionAsync(userEmail, dto.Tier, successUrl, cancelUrl);
     }
