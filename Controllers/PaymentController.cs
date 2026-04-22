@@ -53,8 +53,8 @@ public class CheckoutController : ControllerBase
             return BadRequest(new { error = "У вас вже є активна підписка. Щоб змінити рівень, спершу скасуйте поточну." });
         }
 
-        var successUrl = "http://localhost:5263/SubscriptionSuccess";
-        var cancelUrl = "http://localhost:5263/SubscriptionCancel";
+        var successUrl = "https://all4gymfrontend-production.up.railway.app/SubscriptionSuccess";
+        var cancelUrl = "https://all4gymfrontend-production.up.railway.app/SubscriptionCancel";
 
         try
         {
