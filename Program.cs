@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using All4GYM.Data;
 using All4GYM.Services;
 using All4GYM.Services.Stripe;
+using All4GYM.Services.AI;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -85,6 +86,11 @@ builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<INutritionService, NutritionService>();
 builder.Services.AddScoped<IFoodItemService, FoodItemService>();
 builder.Services.AddScoped<IRecipeService, RecipeService>();
+
+builder.Services.AddHttpClient<IAIService, GeminiService>(client =>
+{
+    client.BaseAddress = new Uri("https://generativelanguage.googleapis.com/v1beta/");
+});
 
 builder.Services.AddSingleton<StripePaymentIntentService>();
 builder.Services.AddSingleton<JwtService>();

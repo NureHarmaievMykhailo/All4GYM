@@ -1,6 +1,9 @@
 using All4GYM.Dtos;
+using All4GYM.Dtos.AI;
 using All4GYM.Models;
 using AutoMapper;
+using System.Collections.Generic;
+using System.Text.Json;
 
 namespace All4GYM.Services;
 
@@ -48,5 +51,11 @@ public class AutoMapperProfile : Profile
         
         CreateMap<UpdateUserProfileDto, User>()
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+        
+        CreateMap<AIReview, AIAnalysisResultDto>()
+            .ForMember(dest => dest.Recommendations, opt => opt.MapFrom(src => 
+                string.IsNullOrWhiteSpace(src.RecommendationsJson) 
+                    ? new List<string>() 
+                    : JsonSerializer.Deserialize<List<string>>(src.RecommendationsJson, (JsonSerializerOptions)null!) ?? new List<string>()));
     }
 }

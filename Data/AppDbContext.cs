@@ -26,6 +26,8 @@ public class AppDbContext : DbContext
     public DbSet<OrderProduct> OrderProducts { get; set; }
     public DbSet<Payment> Payments { get; set; }
     public DbSet<Recipe> Recipes { get; set; }
+    public DbSet<AIReview> AIReviews { get; set; }
+    public DbSet<UserFeedback> UserFeedbacks { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -38,6 +40,32 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<WorkoutExercise>()
             .HasKey(we => new { we.WorkoutId, we.ExerciseId });
+        
+        // Обмежения для ШІ-модуля
+        modelBuilder.Entity<AIReview>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<UserFeedback>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(d => d.AIReview)
+                .WithMany()
+                .HasForeignKey(d => d.AIReviewId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
         // Інші обмеження
         modelBuilder.Entity<Booking>()
