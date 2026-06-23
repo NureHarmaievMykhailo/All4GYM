@@ -29,7 +29,7 @@ public class GeminiService : IAIService
         _httpClient = httpClient;
         _mapper = mapper;
         _apiKey = config["Gemini:ApiKey"] ?? throw new ArgumentNullException("Gemini API Key missing");
-        _model = config["Gemini:Model"] ?? "gemini-1.5-flash";
+        _model = config["Gemini:Model"] ?? "gemini-2.5-flash";
     }
 
     public async Task<AIAnalysisResultDto> GenerateReviewAsync(int userId, AIAnalysisRequestDto dto)
@@ -145,65 +145,62 @@ public class GeminiService : IAIService
     }
 
     private async Task<string> FetchGeminiResponseAsync(string prompt)
-{
-    var relativeUrl = $"models/{_model}:generateContent?key={_apiKey}";
+    {
+        var relativeUrl = $"models/{_model}:generateContent?key={_apiKey}";
 
-    var schemaJson = @"{
-        ""type"": ""OBJECT"",
+        // Пишем схему валидации в виде чистой JSON-строки, чтобы .NET ничего не переименовал
+        var schemaJson = @"{
+        ""type"": ""object"",
         ""properties"": {
-            ""Overview"":        { ""type"": ""STRING"" },
-            ""Recommendations"": { ""type"": ""ARRAY"", ""items"": { ""type"": ""STRING"" } },
-            ""TrendPrediction"": { ""type"": ""STRING"" }
+            ""Overview"": { ""type"": ""string"" },
+            ""Recommendations"": { 
+                ""type"": ""array"", 
+                ""items"": { ""type"": ""string"" } 
+            },
+            ""TrendPrediction"": { ""type"": ""string"" }
         },
         ""required"": [""Overview"", ""Recommendations"", ""TrendPrediction""]
     }";
 
-    // Збираємо тіло запиту вручну, щоб уникнути camelCase-трансформації схеми
-    var requestJson = $@"{{
-        ""contents"": [{{
-            ""parts"": [{{ ""text"": {JsonSerializer.Serialize(prompt)} }}]
-        }}],
-        ""generationConfig"": {{
-            ""responseMimeType"": ""application/json"",
-            ""responseSchema"": {schemaJson}
-        }}
-    }}";
+        using var schemaDoc = JsonDocument.Parse(schemaJson);
 
-    var httpContent = new StringContent(requestJson, Encoding.UTF8, "application/json");
-    var response = await _httpClient.PostAsync(relativeUrl, httpContent);
+        // Собираем тело запроса
+        var requestBody = new
+        {
+            contents = new[]
+            {
+                new
+                {
+                    parts = new[] { new { text = prompt } }
+                }
+            },
+            generationConfig = new
+            {
+                responseMimeType = "application/json",
+                responseSchema = schemaDoc.RootElement
+            }
+        };
 
-    if (!response.IsSuccessStatusCode)
-    {
-        var errorContent = await response.Content.ReadAsStringAsync();
-        throw new HttpRequestException($"Gemini API Error ({(int)response.StatusCode}): {errorContent}");
+        // Отправляем запрос стандартным HttpClient с camelCase стратегией (по умолчанию)
+        var response = await _httpClient.PostAsJsonAsync(relativeUrl, requestBody);
+    
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException($"Gemini API Error ({(int)response.StatusCode}): {errorContent}");
+        }
+
+        var jsonResult = await response.Content.ReadFromJsonAsync<JsonElement>();
+    
+        var rawTextResponse = jsonResult
+            .GetProperty("candidates")[0]
+            .GetProperty("content")
+            .GetProperty("parts")[0]
+            .GetProperty("text")
+            .GetString();
+
+        return rawTextResponse ?? throw new Exception("Gemini returned empty response");
     }
-
-    var jsonResult = await response.Content.ReadFromJsonAsync<JsonElement>();
-
-    // При responseMimeType=application/json Gemini повертає готовий JSON-рядок у полі text
-    var rawTextResponse = jsonResult
-        .GetProperty("candidates")[0]
-        .GetProperty("content")
-        .GetProperty("parts")[0]
-        .GetProperty("text")
-        .GetString();
-
-    if (string.IsNullOrEmpty(rawTextResponse))
-        throw new Exception("Gemini returned empty response");
-
-    // Валідуємо що це дійсно JSON з потрібними полями
-    using var doc = JsonDocument.Parse(rawTextResponse);
-    var root = doc.RootElement;
-
-    if (!root.TryGetProperty("Overview", out _) ||
-        !root.TryGetProperty("Recommendations", out _) ||
-        !root.TryGetProperty("TrendPrediction", out _))
-    {
-        throw new Exception($"Gemini response missing required fields: {rawTextResponse}");
-    }
-
-    return rawTextResponse;
-}
 
     #endregion
 }
