@@ -39,8 +39,7 @@ public class GeminiService : IAIService
 
         var startDate = DateTime.UtcNow.AddDays(-dto.PeriodDays);
         string prompt = "";
-
-        // Сбор контекста в зависимости от вектора (Питание / Тренировки)
+        
         if (dto.VectorType.Equals("Nutrition", StringComparison.OrdinalIgnoreCase))
         {
             var meals = await _context.MealLogs
@@ -64,11 +63,9 @@ public class GeminiService : IAIService
 
             prompt = FormulateWorkoutPrompt(user, workouts, dto.PeriodDays);
         }
-
-        // Запрос к Gemini
+        
         var aiRawJson = await FetchGeminiResponseAsync(prompt);
-
-        // Парсим и сохраняем в БД для кэширования истории
+        
         using var doc = JsonDocument.Parse(aiRawJson);
         var root = doc.RootElement;
 
@@ -148,42 +145,29 @@ public class GeminiService : IAIService
     {
         var relativeUrl = $"models/{_model}:generateContent?key={_apiKey}";
 
-        // Пишем схему валидации в виде чистой JSON-строки, чтобы .NET ничего не переименовал
         var schemaJson = @"{
         ""type"": ""object"",
         ""properties"": {
-            ""Overview"": { ""type"": ""string"" },
-            ""Recommendations"": { 
-                ""type"": ""array"", 
-                ""items"": { ""type"": ""string"" } 
-            },
+            ""Overview"":        { ""type"": ""string"" },
+            ""Recommendations"": { ""type"": ""array"", ""items"": { ""type"": ""string"" } },
             ""TrendPrediction"": { ""type"": ""string"" }
         },
         ""required"": [""Overview"", ""Recommendations"", ""TrendPrediction""]
     }";
+        
+        var requestJson = $@"{{
+        ""contents"": [{{
+            ""parts"": [{{ ""text"": {JsonSerializer.Serialize(prompt)} }}]
+        }}],
+        ""generationConfig"": {{
+            ""responseMimeType"": ""application/json"",
+            ""responseSchema"": {schemaJson}
+        }}
+    }}";
 
-        using var schemaDoc = JsonDocument.Parse(schemaJson);
+        var httpContent = new StringContent(requestJson, Encoding.UTF8, "application/json");
+        var response = await _httpClient.PostAsync(relativeUrl, httpContent);
 
-        // Собираем тело запроса
-        var requestBody = new
-        {
-            contents = new[]
-            {
-                new
-                {
-                    parts = new[] { new { text = prompt } }
-                }
-            },
-            generationConfig = new
-            {
-                responseMimeType = "application/json",
-                responseSchema = schemaDoc.RootElement
-            }
-        };
-
-        // Отправляем запрос стандартным HttpClient с camelCase стратегией (по умолчанию)
-        var response = await _httpClient.PostAsJsonAsync(relativeUrl, requestBody);
-    
         if (!response.IsSuccessStatusCode)
         {
             var errorContent = await response.Content.ReadAsStringAsync();
@@ -191,7 +175,7 @@ public class GeminiService : IAIService
         }
 
         var jsonResult = await response.Content.ReadFromJsonAsync<JsonElement>();
-    
+
         var rawTextResponse = jsonResult
             .GetProperty("candidates")[0]
             .GetProperty("content")
