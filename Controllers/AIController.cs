@@ -19,13 +19,24 @@ public class AIController : ControllerBase
     {
         _aiService = aiService;
     }
-
+    
     [HttpPost("review")]
     public async Task<IActionResult> GetAIReview([FromBody] AIAnalysisRequestDto dto)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
-        var result = await _aiService.GenerateReviewAsync(userId, dto);
-        return Ok(result);
+        try
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+            var result = await _aiService.GenerateReviewAsync(userId, dto);
+            return Ok(result);
+        }
+        catch (HttpRequestException ex)
+        {
+            return StatusCode(502, $"AI Service error: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal error: {ex.Message}");
+        }
     }
 
     [HttpPost("feedback")]
