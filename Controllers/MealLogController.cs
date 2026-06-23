@@ -49,7 +49,7 @@ public class MealLogController : ControllerBase
     /// Створити новий запис харчування.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "User,Nutritionist")]
+    [Authorize(Roles = "User,Nutritionist,Admin")]
     [SwaggerOperation(Summary = "Створити новий запис харчування")]
     public async Task<IActionResult> Create(CreateMealLogDto dto)
     {
