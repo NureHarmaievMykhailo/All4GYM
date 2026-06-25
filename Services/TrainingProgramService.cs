@@ -17,51 +17,50 @@ public class TrainingProgramService : ITrainingProgramService
         _mapper = mapper;
     }
 
-    public async Task<List<TrainingProgramDto>> GetAllAsync(int userId)
+    public async Task<List<TrainingProgramDto>> GetAllAsync()
     {
-        var programs = await _context.TrainingPrograms
-            .Where(p => p.UserId == userId)
-            .ToListAsync();
+        var programs = await _context.TrainingPrograms.ToListAsync();
         return _mapper.Map<List<TrainingProgramDto>>(programs);
     }
 
-    public async Task<TrainingProgramDto> GetByIdAsync(int id, int userId)
+    public async Task<TrainingProgramDto> GetByIdAsync(int id)
     {
         var program = await _context.TrainingPrograms
-            .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId)
+            .FirstOrDefaultAsync(p => p.Id == id)
             ?? throw new Exception("Програма не знайдена");
         return _mapper.Map<TrainingProgramDto>(program);
     }
 
-    public async Task<TrainingProgramDto> CreateAsync(CreateTrainingProgramDto dto, int userId)
+    public async Task<TrainingProgramDto> CreateAsync(CreateTrainingProgramDto dto)
     {
         var program = new TrainingProgram
         {
             Name = dto.Name,
             Description = dto.Description,
-            UserId = userId
+            Category = dto.Category
         };
         _context.TrainingPrograms.Add(program);
         await _context.SaveChangesAsync();
         return _mapper.Map<TrainingProgramDto>(program);
     }
 
-    public async Task<TrainingProgramDto> UpdateAsync(int id, CreateTrainingProgramDto dto, int userId)
+    public async Task<TrainingProgramDto> UpdateAsync(int id, CreateTrainingProgramDto dto)
     {
         var program = await _context.TrainingPrograms
-            .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId)
+            .FirstOrDefaultAsync(p => p.Id == id)
             ?? throw new Exception("Програма не знайдена");
 
         program.Name = dto.Name;
         program.Description = dto.Description;
+        program.Category = dto.Category;
         await _context.SaveChangesAsync();
         return _mapper.Map<TrainingProgramDto>(program);
     }
 
-    public async Task DeleteAsync(int id, int userId)
+    public async Task DeleteAsync(int id)
     {
         var program = await _context.TrainingPrograms
-            .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId)
+            .FirstOrDefaultAsync(p => p.Id == id)
             ?? throw new Exception("Програма не знайдена");
 
         _context.TrainingPrograms.Remove(program);

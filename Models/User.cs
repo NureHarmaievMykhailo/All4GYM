@@ -21,7 +21,7 @@ public class User
     public string? PreferredWorkoutDays { get; set; }
     public string? GymPassCode { get; set; }
 
-    public ICollection<TrainingProgram> TrainingPrograms { get; set; } = new List<TrainingProgram>();
+    public ICollection<Workout> Workouts { get; set; } = new List<Workout>();
     public ICollection<MealLog> MealLogs { get; set; } = new List<MealLog>();
     public ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
     public ICollection<Booking> Bookings { get; set; } = new List<Booking>();

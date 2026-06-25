@@ -6,8 +6,7 @@ public class TrainingProgram
     public string Name { get; set; } = null!;
     public string? Description { get; set; }
 
-    public int UserId { get; set; }
-    public User User { get; set; } = null!;
+    public string? Category { get; set; }
 
     public ICollection<Workout> Workouts { get; set; } = new List<Workout>();
 }

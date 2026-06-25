@@ -31,7 +31,7 @@ public class TrainingProgramController : ControllerBase
     )]
     public async Task<IActionResult> GetAll()
     {
-        var result = await _service.GetAllAsync(GetUserId());
+        var result = await _service.GetAllAsync();
         return Ok(result);
     }
 
@@ -45,7 +45,7 @@ public class TrainingProgramController : ControllerBase
     )]
     public async Task<IActionResult> GetById(int id)
     {
-        var result = await _service.GetByIdAsync(id, GetUserId());
+        var result = await _service.GetByIdAsync(id);
         return Ok(result);
     }
 
@@ -60,7 +60,7 @@ public class TrainingProgramController : ControllerBase
     )]
     public async Task<IActionResult> Create(CreateTrainingProgramDto dto)
     {
-        var result = await _service.CreateAsync(dto, GetUserId());
+        var result = await _service.CreateAsync(dto);
         return Ok(result);
     }
 
@@ -75,7 +75,7 @@ public class TrainingProgramController : ControllerBase
     )]
     public async Task<IActionResult> Update(int id, CreateTrainingProgramDto dto)
     {
-        var result = await _service.UpdateAsync(id, dto, GetUserId());
+        var result = await _service.UpdateAsync(id, dto);
         return Ok(result);
     }
 
@@ -90,7 +90,7 @@ public class TrainingProgramController : ControllerBase
     )]
     public async Task<IActionResult> Delete(int id)
     {
-        await _service.DeleteAsync(id, GetUserId());
+        await _service.DeleteAsync(id);
         return NoContent();
     }
 }

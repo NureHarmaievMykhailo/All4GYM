@@ -4,4 +4,5 @@ public class CreateTrainingProgramDto
 {
     public string Name { get; set; } = null!;
     public string? Description { get; set; }
+    public string? Category { get; set; }
 }

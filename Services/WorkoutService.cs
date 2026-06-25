@@ -20,8 +20,7 @@ public class WorkoutService : IWorkoutService
     public async Task<List<WorkoutDto>> GetAllAsync(int userId)
     {
         var workouts = await _context.Workouts
-            .Include(w => w.TrainingProgram)
-            .Where(w => w.TrainingProgram.UserId == userId)
+            .Where(w => w.UserId == userId)
             .ToListAsync();
 
         return _mapper.Map<List<WorkoutDto>>(workouts);
@@ -30,8 +29,7 @@ public class WorkoutService : IWorkoutService
     public async Task<WorkoutDto> GetByIdAsync(int id, int userId)
     {
         var workout = await _context.Workouts
-            .Include(w => w.TrainingProgram)
-            .FirstOrDefaultAsync(w => w.Id == id && w.TrainingProgram.UserId == userId)
+            .FirstOrDefaultAsync(w => w.Id == id && w.UserId == userId)
             ?? throw new Exception("Тренування не знайдено");
 
         return _mapper.Map<WorkoutDto>(workout);
@@ -40,11 +38,12 @@ public class WorkoutService : IWorkoutService
     public async Task<WorkoutDto> CreateAsync(CreateWorkoutDto dto, int userId)
     {
         var program = await _context.TrainingPrograms
-            .FirstOrDefaultAsync(p => p.Id == dto.TrainingProgramId && p.UserId == userId)
-            ?? throw new Exception("Програма не знайдена або недоступна");
+            .FirstOrDefaultAsync(p => p.Id == dto.TrainingProgramId)
+            ?? throw new Exception("Програма не знайдена");
 
         var workout = new Workout
         {
+            UserId = userId,
             TrainingProgramId = dto.TrainingProgramId,
             Date = dto.Date,
             Notes = dto.Notes
@@ -59,10 +58,16 @@ public class WorkoutService : IWorkoutService
     public async Task<WorkoutDto> UpdateAsync(int id, CreateWorkoutDto dto, int userId)
     {
         var workout = await _context.Workouts
-            .Include(w => w.TrainingProgram)
-            .FirstOrDefaultAsync(w => w.Id == id && w.TrainingProgram.UserId == userId)
+            .FirstOrDefaultAsync(w => w.Id == id && w.UserId == userId)
             ?? throw new Exception("Тренування не знайдено");
+        
+        var programExists = await _context.TrainingPrograms
+            .AnyAsync(p => p.Id == dto.TrainingProgramId);
 
+        if (!programExists)
+            throw new Exception("Програма не знайдена");
+
+        workout.TrainingProgramId = dto.TrainingProgramId;
         workout.Date = dto.Date;
         workout.Notes = dto.Notes;
         await _context.SaveChangesAsync();
@@ -73,8 +78,7 @@ public class WorkoutService : IWorkoutService
     public async Task DeleteAsync(int id, int userId)
     {
         var workout = await _context.Workouts
-            .Include(w => w.TrainingProgram)
-            .FirstOrDefaultAsync(w => w.Id == id && w.TrainingProgram.UserId == userId)
+            .FirstOrDefaultAsync(w => w.Id == id && w.UserId == userId)
             ?? throw new Exception("Тренування не знайдено");
 
         _context.Workouts.Remove(workout);

@@ -41,7 +41,6 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<WorkoutExercise>()
             .HasKey(we => new { we.WorkoutId, we.ExerciseId });
         
-        // Обмежения для ШІ-модуля
         modelBuilder.Entity<AIReview>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -110,10 +109,16 @@ public class AppDbContext : DbContext
             .HasForeignKey(p => p.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<TrainingProgram>()
-            .HasOne(tp => tp.User)
-            .WithMany(u => u.TrainingPrograms)
-            .HasForeignKey(tp => tp.UserId)
+        modelBuilder.Entity<Workout>()
+            .HasOne(w => w.User)
+            .WithMany(u => u.Workouts)
+            .HasForeignKey(w => w.UserId)
+            .OnDelete(DeleteBehavior.Cascade); // Обычно при удалении пользователя удаляются и его логи тренировок
+
+        modelBuilder.Entity<Workout>()
+            .HasOne(w => w.TrainingProgram)
+            .WithMany(tp => tp.Workouts)
+            .HasForeignKey(w => w.TrainingProgramId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

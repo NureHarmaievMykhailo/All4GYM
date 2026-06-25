@@ -58,7 +58,7 @@ public class GeminiService : IAIService
             var workouts = await _context.Workouts
                 .Include(w => w.WorkoutExercises)
                     .ThenInclude(we => we.Exercise)
-                .Where(w => w.TrainingProgram.UserId == userId && w.Date >= startDate)
+                .Where(w => w.UserId == userId && w.Date >= startDate)
                 .ToListAsync();
 
             prompt = FormulateWorkoutPrompt(user, workouts, dto.PeriodDays);

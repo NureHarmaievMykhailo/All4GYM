@@ -18,7 +18,7 @@ public class WorkoutExerciseService : IWorkoutExerciseService
     {
         var workout = await _context.Workouts
             .Include(w => w.TrainingProgram)
-            .FirstOrDefaultAsync(w => w.Id == workoutId && w.TrainingProgram.UserId == userId)
+            .FirstOrDefaultAsync(w => w.Id == workoutId && w.UserId == userId)
             ?? throw new Exception("Тренування не знайдено або не належить вам");
 
         var items = await _context.WorkoutExercises
@@ -41,7 +41,7 @@ public class WorkoutExerciseService : IWorkoutExerciseService
     {
         var workout = await _context.Workouts
             .Include(w => w.TrainingProgram)
-            .FirstOrDefaultAsync(w => w.Id == workoutId && w.TrainingProgram.UserId == userId)
+            .FirstOrDefaultAsync(w => w.Id == workoutId && w.UserId == userId)
             ?? throw new Exception("Тренування не знайдено або не належить вам");
 
         var exists = await _context.WorkoutExercises
@@ -67,7 +67,7 @@ public class WorkoutExerciseService : IWorkoutExerciseService
     {
         var workout = await _context.Workouts
             .Include(w => w.TrainingProgram)
-            .FirstOrDefaultAsync(w => w.Id == workoutId && w.TrainingProgram.UserId == userId)
+            .FirstOrDefaultAsync(w => w.Id == workoutId && w.UserId == userId)
             ?? throw new Exception("Тренування не знайдено або не належить вам");
 
         var we = await _context.WorkoutExercises
