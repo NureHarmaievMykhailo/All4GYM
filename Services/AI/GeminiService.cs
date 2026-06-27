@@ -113,8 +113,29 @@ public class GeminiService : IAIService
 
         return _mapper.Map<List<AIAnalysisResultDto>>(history);
     }
+    
+    public async Task<WorkoutOptimizationResultDto> OptimizeWorkoutAsync(int userId, int currentWorkoutId)
+    {
+        var currentWorkout = await _context.Workouts
+            .Include(w => w.WorkoutExercises).ThenInclude(we => we.Exercise)
+            .FirstOrDefaultAsync(w => w.Id == currentWorkoutId && w.UserId == userId);
 
-    #region Промпты и HTTP Клиент
+        if (currentWorkout == null) throw new KeyNotFoundException("Тренування не знайдено");
+
+        var previousWorkouts = await _context.Workouts
+            .Include(w => w.WorkoutExercises).ThenInclude(we => we.Exercise)
+            .Where(w => w.UserId == userId && w.TrainingProgramId == currentWorkout.TrainingProgramId && w.Date < currentWorkout.Date)
+            .OrderByDescending(w => w.Date)
+            .Take(2)
+            .ToListAsync();
+        
+        string prompt = FormulateOptimizationPrompt(currentWorkout, previousWorkouts);
+        var resultDto = await FetchOptimizationJsonAsync(prompt);
+
+        return resultDto;
+    }
+
+    #region Промпти та HTTP Клієнт
 
     private string FormulateNutritionPrompt(User user, List<MealLog> meals, List<ProgressLog> weights, int days)
     {
@@ -184,6 +205,59 @@ public class GeminiService : IAIService
             .GetString();
 
         return rawTextResponse ?? throw new Exception("Gemini returned empty response");
+    }
+    
+    private string FormulateOptimizationPrompt(Workout current, List<Workout> previous)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine(@"Проаналізуй дані за критеріями:
+1. Порядок вправ (базові/ізоляція, чергування м'язів).
+2. Плато (застій ваги).
+3. План дій на наступний раз.
+Відповідь надай стисло, чітко і по суті.");
+
+        return sb.ToString();
+    }
+
+    private async Task<WorkoutOptimizationResultDto> FetchOptimizationJsonAsync(string prompt)
+    {
+        var relativeUrl = $"models/{_model}:generateContent?key={_apiKey}";
+        var schemaJson = @"{
+            ""type"": ""object"",
+            ""properties"": {
+                ""OrderOptimization"": { ""type"": ""string"" },
+                ""PlateauDetection"":  { ""type"": ""string"" },
+                ""NextPlan"":          { ""type"": ""string"" }
+            },
+            ""required"": [""OrderOptimization"", ""PlateauDetection"", ""NextPlan""]
+        }";
+
+        var requestJson = $@"{{
+            ""contents"": [{{
+                ""parts"": [{{ ""text"": {JsonSerializer.Serialize(prompt)} }}]
+            }}],
+            ""generationConfig"": {{
+                ""responseMimeType"": ""application/json"",
+                ""responseSchema"": {schemaJson}
+            }}
+        }}";
+
+        var httpContent = new StringContent(requestJson, Encoding.UTF8, "application/json");
+        var response = await _httpClient.PostAsync(relativeUrl, httpContent);
+
+        if (!response.IsSuccessStatusCode) throw new HttpRequestException($"Gemini Error: {await response.Content.ReadAsStringAsync()}");
+
+        var jsonResult = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        var rawTextResponse = jsonResult
+            .GetProperty("candidates")[0]
+            .GetProperty("content")
+            .GetProperty("parts")[0]
+            .GetProperty("text")
+            .GetString() ?? "{}";
+        
+        return JsonSerializer.Deserialize<WorkoutOptimizationResultDto>(rawTextResponse) 
+               ?? new WorkoutOptimizationResultDto();
     }
 
     #endregion

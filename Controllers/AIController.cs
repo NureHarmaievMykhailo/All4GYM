@@ -44,4 +44,26 @@ public class AIController : ControllerBase
         var history = await _aiService.GetUserReviewHistoryAsync(userId, vectorType);
         return Ok(history);
     }
+    
+    [HttpGet("optimize-workout/{currentWorkoutId}")]
+    public async Task<IActionResult> OptimizeWorkout(int currentWorkoutId)
+    {
+        try
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr)) return Unauthorized();
+            var userId = int.Parse(userIdStr);
+            var result = await _aiService.OptimizeWorkoutAsync(userId, currentWorkoutId);
+            
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }

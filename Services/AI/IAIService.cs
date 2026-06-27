@@ -9,4 +9,5 @@ public interface IAIService
     Task<AIAnalysisResultDto> GenerateReviewAsync(int userId, AIAnalysisRequestDto dto);
     Task<bool> SubmitFeedbackAsync(int userId, SubmitFeedbackDto dto);
     Task<List<AIAnalysisResultDto>> GetUserReviewHistoryAsync(int userId, string vectorType);
+    Task<WorkoutOptimizationResultDto> OptimizeWorkoutAsync(int userId, int currentWorkoutId);
 }
