@@ -252,7 +252,7 @@ public class GeminiService : IAIService
                 ""PlateauDetection"":  { ""type"": ""string"" },
                 ""FuturePlan"":          { ""type"": ""string"" }
             },
-            ""required"": [""OrderOptimization"", ""PlateauDetection"", ""NextPlan""]
+            ""required"": [""OrderOptimization"", ""PlateauDetection"", ""FuturePlan""]
         }";
 
         var requestJson = $@"{{
