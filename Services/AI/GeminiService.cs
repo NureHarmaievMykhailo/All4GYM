@@ -207,40 +207,51 @@ public class GeminiService : IAIService
         return rawTextResponse ?? throw new Exception("Gemini returned empty response");
     }
     
-    private string FormulateOptimizationPrompt(Workout current, List<Workout> previous)
+    private string FormulateOptimizationPrompt(Workout current, List<Workout> previous) 
+{ 
+    var sb = new StringBuilder(); 
+    
+    sb.AppendLine("Роль: Ти — AI-експерт з біомеханіки, спортивної медицини та побудови тренувань в All4GYM.");
+    sb.AppendLine("Завдання: Проаналізувати поточне тренування, порівняти з минулими, знайти плато/помилки та дати інструкцію.");
+    sb.AppendLine("Правило відповіді: Без «води», без привітань, строго по факту. Тільки конкретні зауваження та цифри.");
+    sb.AppendLine("---");
+    
+    sb.AppendLine($"ПОТОЧНЕ ТРЕНУВАННЯ ({current.Date:yyyy-MM-dd}):"); 
+    foreach (var we in current.WorkoutExercises) 
     {
-        var sb = new StringBuilder();
+        sb.AppendLine($" - {we.Exercise.Name} [{we.Exercise.MuscleGroup}]: {we.Sets} підх. х {we.Reps} повт. х {we.Weight}кг");
+    } 
+    
+    if (previous != null && previous.Any()) 
+    { 
+        sb.AppendLine("\nІСТОРІЯ МИНУЛИХ ТРЕНУВАНЬ (для аналізу прогресії та плато):"); 
+        foreach (var w in previous.OrderByDescending(x => x.Date)) 
+        { 
+            sb.AppendLine($" [{w.Date:yyyy-MM-dd}]:"); 
+            foreach (var we in w.WorkoutExercises) 
+            { 
+                sb.AppendLine($"   • {we.Exercise.Name} [{we.Exercise.MuscleGroup}]: {we.Sets}х{we.Reps}х{we.Weight}кг"); 
+            } 
+        } 
+    } 
+    else 
+    { 
+        sb.AppendLine("\nІсторія минулих тренувань відсутня. Проаналізуй тільки поточну структуру."); 
+    } 
+    
+    sb.AppendLine("\n---");
+    sb.AppendLine("КРИТЕРІЇ АНАЛІЗУ:");
+    sb.AppendLine("1. Порядок вправ та чергування: Чи йдуть важкі (базові) вправи першими? Чи немає перевантаження однієї групи м'язів підряд (наприклад, жим штанги одразу після жиму гантелей)?");
+    sb.AppendLine("2. Аналіз прогресу/плато: Порівняй робочі веса та повторення в однакових вправах. Якщо показники не ростуть або падають 2+ тренування поспіль — зафіксуй плато.");
+    sb.AppendLine("3. Чіткий план дій: Що конкретно змінити (вага, повтори, порядок) на наступному тренуванні.");
+    
+    sb.AppendLine("\nФОРМАТ ВІДПОВІДІ (Дотримуйся його суворо):");
+    sb.AppendLine("⚠️ Помилки/Чергування: [Коротко, що не так з порядком або групами м'язів, або 'Порядок оптимізовано']");
+    sb.AppendLine("📈 Статус прогресу: [Виявлені плато або фіксація прогресу у конкретних вправах]");
+    sb.AppendLine("🎯 План на наступний раз: [Точні рекомендації: змінити вагу на Х кг, поміняти місцями вправу А і Б]");
 
-        sb.AppendLine("Ти — AI-експерт з біомеханіки в All4GYM.");
-        sb.AppendLine($"Поточне тренування ({current.Date:yyyy-MM-dd}):");
-
-        foreach (var we in current.WorkoutExercises)
-            sb.AppendLine($"  - {we.Exercise.Name}: {we.Sets} підходи x {we.Reps} повторів x {we.Weight}кг");
-
-        if (previous.Any())
-        {
-            sb.AppendLine("\nПопередні тренування (для порівняння прогресії):");
-            foreach (var w in previous)
-            {
-                sb.AppendLine($"  [{w.Date:yyyy-MM-dd}]:");
-                foreach (var we in w.WorkoutExercises)
-                    sb.AppendLine($"    - {we.Exercise.Name}: {we.Sets}x{we.Reps}x{we.Weight}кг");
-            }
-        }
-        else
-        {
-            sb.AppendLine("\nПопередніх тренувань для порівняння немає.");
-        }
-
-        sb.AppendLine(@"
-Проаналізуй за критеріями:
-1. Порядок вправ (базові/ізоляція, чергування м'язів).
-2. Плато (застій ваги між тренуваннями).
-3. План дій на наступний раз.
-Відповідь надай стисло, чітко і по суті.");
-
-        return sb.ToString();
-    }
+    return sb.ToString(); 
+}
 
     private async Task<WorkoutOptimizationResultDto> FetchOptimizationJsonAsync(string prompt)
     {
