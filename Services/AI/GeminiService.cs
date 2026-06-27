@@ -210,9 +210,32 @@ public class GeminiService : IAIService
     private string FormulateOptimizationPrompt(Workout current, List<Workout> previous)
     {
         var sb = new StringBuilder();
-        sb.AppendLine(@"Проаналізуй дані за критеріями:
+
+        sb.AppendLine("Ти — AI-експерт з біомеханіки в All4GYM.");
+        sb.AppendLine($"Поточне тренування ({current.Date:yyyy-MM-dd}):");
+
+        foreach (var we in current.WorkoutExercises)
+            sb.AppendLine($"  - {we.Exercise.Name}: {we.Sets} підходи x {we.Reps} повторів x {we.Weight}кг");
+
+        if (previous.Any())
+        {
+            sb.AppendLine("\nПопередні тренування (для порівняння прогресії):");
+            foreach (var w in previous)
+            {
+                sb.AppendLine($"  [{w.Date:yyyy-MM-dd}]:");
+                foreach (var we in w.WorkoutExercises)
+                    sb.AppendLine($"    - {we.Exercise.Name}: {we.Sets}x{we.Reps}x{we.Weight}кг");
+            }
+        }
+        else
+        {
+            sb.AppendLine("\nПопередніх тренувань для порівняння немає.");
+        }
+
+        sb.AppendLine(@"
+Проаналізуй за критеріями:
 1. Порядок вправ (базові/ізоляція, чергування м'язів).
-2. Плато (застій ваги).
+2. Плато (застій ваги між тренуваннями).
 3. План дій на наступний раз.
 Відповідь надай стисло, чітко і по суті.");
 
@@ -227,7 +250,7 @@ public class GeminiService : IAIService
             ""properties"": {
                 ""OrderOptimization"": { ""type"": ""string"" },
                 ""PlateauDetection"":  { ""type"": ""string"" },
-                ""NextPlan"":          { ""type"": ""string"" }
+                ""FuturePlan"":          { ""type"": ""string"" }
             },
             ""required"": [""OrderOptimization"", ""PlateauDetection"", ""NextPlan""]
         }";
