@@ -20,6 +20,11 @@ public class User
     public string? Goal { get; set; }
     public string? PreferredWorkoutDays { get; set; }
     public string? GymPassCode { get; set; }
+    
+    public int TargetCalories { get; set; } = 2000;
+    public float TargetProteins { get; set; } = 140;
+    public float TargetFats { get; set; } = 65;
+    public float TargetCarbs { get; set; } = 210;
 
     public ICollection<Workout> Workouts { get; set; } = new List<Workout>();
     public ICollection<MealLog> MealLogs { get; set; } = new List<MealLog>();

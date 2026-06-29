@@ -67,8 +67,7 @@ public class UserService : IUserService
         user.Email = dto.Email;
         if (!string.IsNullOrWhiteSpace(dto.Password))
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
-
-        // Нові поля
+        
         user.Age = dto.Age;
         user.HeightCm = dto.HeightCm;
         user.WeightKg = dto.WeightKg;
@@ -76,6 +75,11 @@ public class UserService : IUserService
         user.Goal = dto.Goal;
         user.PreferredWorkoutDays = dto.PreferredWorkoutDays;
         user.GymPassCode = dto.GymPassCode;
+        
+        if (dto.TargetCalories.HasValue) user.TargetCalories = dto.TargetCalories.Value;
+        if (dto.TargetProteins.HasValue) user.TargetProteins = dto.TargetProteins.Value;
+        if (dto.TargetFats.HasValue) user.TargetFats = dto.TargetFats.Value;
+        if (dto.TargetCarbs.HasValue) user.TargetCarbs = dto.TargetCarbs.Value;
 
         await _context.SaveChangesAsync();
         return _mapper.Map<UserDto>(user);
