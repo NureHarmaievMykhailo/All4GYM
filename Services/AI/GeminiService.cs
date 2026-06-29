@@ -134,6 +134,16 @@ public class GeminiService : IAIService
 
         return resultDto;
     }
+    
+    public async Task<DailyNutritionAnalysisDto> AnalyzeDailyNutritionAsync(int userId, DateTime targetDate)
+    {
+        var mealLogs = await _context.MealLogs
+            .Include(m => m.FoodItem)
+            .Where(m => m.UserId == userId && m.Date.Date == targetDate.Date)
+            .ToListAsync();
+        string prompt = FormulateDailyNutritionPrompt(targetDate, mealLogs);
+        return await FetchDailyNutritionJsonAsync(prompt);
+    }
 
     #region Промпти та HTTP Клієнт
 
@@ -156,7 +166,7 @@ public class GeminiService : IAIService
         var workoutSummary = workouts.Select(w => 
             $"Дата: {w.Date:yyyy-MM-dd}, Упражнения: " + string.Join(", ", w.WorkoutExercises.Select(we => $"{we.Exercise.Name} ({we.Weight}кг x {we.Reps})")));
 
-        return $@"Ты — ИИ-эксперт по биомеханике в All4GYM. Проанализируй тренировки за {days} дней.
+        return $@"Ти — ИИ-эксперт по биомеханике в All4GYM. Проанализируй тренировки за {days} дней.
         Профиль: Рост: {user.HeightCm}см, Вес: {user.WeightKg}кг.
         Логи тренировок:\n{string.Join("\n", workoutSummary)}
         Проанализируй прогрессию нагрузок (Progressive Overload) и объемный тренинг. Оцени, эффективен ли шаг весов. Дай 3 тактических совета.";
@@ -294,5 +304,85 @@ public class GeminiService : IAIService
                ?? new WorkoutOptimizationResultDto();
     }
 
+    private string FormulateDailyNutritionPrompt(DateTime targetDate, List<MealLog> meals)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine($"Дата аналізу: {targetDate:yyyy-MM-dd}");
+        
+        if (!meals.Any())
+        {
+            sb.AppendLine("Користувач ще не додав жодного прийому їжі за цей день.");
+        }
+        else
+        {
+            float totalCal = 0, totalP = 0, totalF = 0, totalC = 0;
+            sb.AppendLine("З'ЇДЕНО:");
+            
+            foreach (var m in meals)
+            {
+                sb.AppendLine($"- [{m.MealType}] {m.FoodItem?.Name ?? "Продукт"}: {m.Grams}г ({m.Calories} ккал, Б: {m.Proteins}г, Ж: {m.Fats}г, В: {m.Carbs}г)");
+                totalCal += m.Calories;
+                totalP += m.Proteins;
+                totalF += m.Fats;
+                totalC += m.Carbs;
+            }
+
+            sb.AppendLine($"\nПІДСУМОК ЗА ДЕНЬ: {totalCal} ккал (Білки: {totalP}г, Жири: {totalF}г, Вуглеводи: {totalC}г).");
+        }
+
+        sb.AppendLine(@"
+Ти — професійний AI-нутриціолог. Проаналізуй цей раціон.
+Вимоги до аналізу:
+1. BalanceVerdict: Дай загальну оцінку балансу КБЖУ за день.
+2. MicronutrientsNotes: Вкажи на перекоси (наприклад, забагато цукру/жирів, не вистачає білка).
+3. RecommendationForDinner: Порадь, що краще з'їсти на наступний прийом їжі, щоб вирівняти баланс.
+Відповідь має бути короткою, експертною та без води.");
+
+        return sb.ToString();
+    }
+
+    private async Task<DailyNutritionAnalysisDto> FetchDailyNutritionJsonAsync(string prompt)
+    {
+        var relativeUrl = $"models/{_model}:generateContent?key={_apiKey}";
+        
+        var schemaJson = @"{
+            ""type"": ""object"",
+            ""properties"": {
+                ""balanceVerdict"":          { ""type"": ""string"" },
+                ""micronutrientsNotes"":     { ""type"": ""string"" },
+                ""recommendationForDinner"": { ""type"": ""string"" }
+            },
+            ""required"": [""balanceVerdict"", ""micronutrientsNotes"", ""recommendationForDinner""]
+        }";
+
+        var requestJson = $@"{{
+            ""contents"": [{{
+                ""parts"": [{{ ""text"": {JsonSerializer.Serialize(prompt)} }}]
+            }}],
+            ""generationConfig"": {{
+                ""responseMimeType"": ""application/json"",
+                ""responseSchema"": {schemaJson}
+            }}
+        }}";
+
+        var httpContent = new StringContent(requestJson, Encoding.UTF8, "application/json");
+        var response = await _httpClient.PostAsync(relativeUrl, httpContent);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"[Gemini Error]: {error}");
+            throw new HttpRequestException("Помилка генерації AI-аналізу");
+        }
+
+        var jsonResult = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var rawTextResponse = jsonResult
+            .GetProperty("candidates")[0].GetProperty("content").GetProperty("parts")[0].GetProperty("text").GetString() ?? "{}";
+
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        return JsonSerializer.Deserialize<DailyNutritionAnalysisDto>(rawTextResponse, options) 
+               ?? new DailyNutritionAnalysisDto();
+    }
+    
     #endregion
 }

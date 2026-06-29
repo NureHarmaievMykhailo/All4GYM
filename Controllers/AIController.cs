@@ -66,4 +66,23 @@ public class AIController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+    
+    [HttpGet("analyze-daily-nutrition")]
+    public async Task<IActionResult> AnalyzeDailyNutrition([FromQuery] DateTime date)
+    {
+        try
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr)) return Unauthorized();
+
+            var userId = int.Parse(userIdStr);
+            var result = await _aiService.AnalyzeDailyNutritionAsync(userId, date);
+            
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }
