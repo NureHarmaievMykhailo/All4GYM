@@ -80,7 +80,11 @@ public class UserController : ControllerBase
             gender = user.Gender,
             goal = user.Goal,
             preferredWorkoutDays = user.PreferredWorkoutDays,
-            gymPassCode = user.GymPassCode
+            gymPassCode = user.GymPassCode,
+            targetCalories = user.TargetCalories,
+            targetProteins = user.TargetProteins,
+            targetFats = user.TargetFats,
+            targetCarbs = user.TargetCarbs
         });
     }
 
