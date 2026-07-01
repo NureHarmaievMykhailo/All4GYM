@@ -141,7 +141,10 @@ public class GeminiService : IAIService
             .Include(m => m.FoodItem)
             .Where(m => m.UserId == userId && m.Date.Date == targetDate.Date)
             .ToListAsync();
-        string prompt = FormulateDailyNutritionPrompt(targetDate, mealLogs);
+        var user = await _context.Users
+                       .FirstOrDefaultAsync(u => u.Id == userId) 
+                   ?? throw new Exception("Користувача не знайдено");
+        string prompt = FormulateDailyNutritionPrompt(targetDate, mealLogs, user);
         return await FetchDailyNutritionJsonAsync(prompt);
     }
 
@@ -304,42 +307,62 @@ public class GeminiService : IAIService
                ?? new WorkoutOptimizationResultDto();
     }
 
-    private string FormulateDailyNutritionPrompt(DateTime targetDate, List<MealLog> meals)
+    private string FormulateDailyNutritionPrompt(DateTime targetDate, List<MealLog> meals, User user)
+{
+    var sb = new StringBuilder();
+    sb.AppendLine($"Дата аналізу: {targetDate:yyyy-MM-dd}");
+    
+    // Вытягиваем таргеты (убедись, что названия свойств совпадают с твоей моделью User)
+    int targetCal = user.TargetCalories;
+    float targetP = user.TargetProteins;
+    float targetF = user.TargetFats;
+    float targetC = user.TargetCarbs;
+
+    sb.AppendLine("\n🎯 ЦІЛЬОВІ НОРМИ КОРИСТУВАЧА НА ДЕНЬ:");
+    sb.AppendLine($"- Калорії: {targetCal} ккал | Білки: {targetP}г | Жири: {targetF}г | Вуглеводи: {targetC}г\n");
+
+    // Считаем фактическое потребление через LINQ
+    float totalCal = meals.Sum(m => m.Calories);
+    float totalP = meals.Sum(m => m.Proteins);
+    float totalF = meals.Sum(m => m.Fats);
+    float totalC = meals.Sum(m => m.Carbs);
+
+    if (!meals.Any())
     {
-        var sb = new StringBuilder();
-        sb.AppendLine($"Дата аналізу: {targetDate:yyyy-MM-dd}");
-        
-        if (!meals.Any())
+        sb.AppendLine("З'ЇДЕНО: Користувач ще не додав жодного прийому їжі за цей день.");
+    }
+    else
+    {
+        sb.AppendLine("З'ЇДЕНО ПРОДУКТИ:");
+        foreach (var m in meals)
         {
-            sb.AppendLine("Користувач ще не додав жодного прийому їжі за цей день.");
+            sb.AppendLine($"- [{m.MealType}] {m.FoodItem?.Name ?? "Продукт"}: {m.Grams}г ({m.Calories} ккал, Б: {m.Proteins}г, Ж: {m.Fats}г, В: {m.Carbs}г)");
         }
-        else
-        {
-            float totalCal = 0, totalP = 0, totalF = 0, totalC = 0;
-            sb.AppendLine("З'ЇДЕНО:");
-            
-            foreach (var m in meals)
-            {
-                sb.AppendLine($"- [{m.MealType}] {m.FoodItem?.Name ?? "Продукт"}: {m.Grams}г ({m.Calories} ккал, Б: {m.Proteins}г, Ж: {m.Fats}г, В: {m.Carbs}г)");
-                totalCal += m.Calories;
-                totalP += m.Proteins;
-                totalF += m.Fats;
-                totalC += m.Carbs;
-            }
+    }
 
-            sb.AppendLine($"\nПІДСУМОК ЗА ДЕНЬ: {totalCal} ккал (Білки: {totalP}г, Жири: {totalF}г, Вуглеводи: {totalC}г).");
-        }
+    // Считаем точную математическую разницу
+    float diffCal = targetCal - totalCal;
+    float diffP = targetP - totalP;
+    float diffF = targetF - totalF;
+    float diffC = targetC - totalC;
 
-        sb.AppendLine(@"
-Ти — професійний AI-нутриціолог. Проаналізуй цей раціон.
+    sb.AppendLine("\n📊 ПОТОЧНИЙ БАЛАНС:");
+    sb.AppendLine($"- Калорії: {totalCal} з {targetCal} ккал (Залишок: {diffCal} ккал)");
+    sb.AppendLine($"- Білки: {totalP} з {targetP}г (Залишок: {diffP}г)");
+    sb.AppendLine($"- Жири: {totalF} з {targetF}г (Залишок: {diffF}г)");
+    sb.AppendLine($"- Вуглеводи: {totalC} з {targetC}г (Залишок: {diffC}г)");
+
+    sb.AppendLine(@"
+Ти — професійний AI-нутриціолог платформи All4GYM. Твоя задача — проаналізувати поточний раціон користувача, порівнюючи його з ЦІЛЬОВИМИ НОРМАМИ.
 Вимоги до аналізу:
-1. BalanceVerdict: Дай загальну оцінку балансу КБЖУ за день.
-2. MicronutrientsNotes: Вкажи на перекоси (наприклад, забагато цукру/жирів, не вистачає білка).
-3. RecommendationForDinner: Порадь, що краще з'їсти на наступний прийом їжі, щоб вирівняти баланс.
+1. BalanceVerdict: Дай оцінку балансу КБЖУ, спираючись на точні цифри залишку або перевищення норми.
+2. MicronutrientsNotes: Проаналізуй якість обраних продуктів (чи немає надлишку швидких цукрів, шкідливих жирів, чи достатньо різноманітна їжа).
+3. RecommendationForDinner: Дай конкретну рекомендацію на наступний прийом їжі або вечерю. Рекомендація має бути МАТЕМАТИЧНО обґрунтованою. Якщо у користувача дефіцит білка на 40г, запропонуй конкретну порцію їжі, яка перекриє цей дефіцит (наприклад, куряче філе, сир), мінімізуючи те, що вже в надлишку.
+
 Відповідь має бути короткою, експертною та без води.");
 
-        return sb.ToString();
-    }
+    return sb.ToString();
+}
 
     private async Task<DailyNutritionAnalysisDto> FetchDailyNutritionJsonAsync(string prompt)
     {
