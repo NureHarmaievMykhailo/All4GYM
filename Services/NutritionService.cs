@@ -34,17 +34,17 @@ public class NutritionService : INutritionService
         switch (input.Goal)
         {
             case FitnessGoal.LoseFast:
-                targetCalories = tdee - 700;
+                targetCalories = tdee - 500;
                 proteinPerKg = 2.3;
                 fatPerKg = 0.9;
                 break;
             case FitnessGoal.LoseSlow:
-                targetCalories = tdee - 350;
+                targetCalories = tdee - 300;
                 proteinPerKg = 2.2;
                 fatPerKg = 1.0;
                 break;
             case FitnessGoal.Gain:
-                targetCalories = tdee + 400;
+                targetCalories = tdee + 300;
                 proteinPerKg = 2.0;
                 fatPerKg = 1.0;
                 break;
@@ -65,7 +65,7 @@ public class NutritionService : INutritionService
         
         if (remainingCaloriesForCarbs < 0)
         {
-            fats = (int)Math.Max(30, fats * 0.8); // Минимум 30г жиров для здоровья
+            fats = (int)Math.Max(30, fats * 0.8);
             consumedCaloriesByProAndFat = (proteins * CALORIES_PER_GRAM_PROTEIN) + (fats * CALORIES_PER_GRAM_FAT);
             remainingCaloriesForCarbs = (int)Math.Round(targetCalories) - consumedCaloriesByProAndFat;
         }
