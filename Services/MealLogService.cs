@@ -22,8 +22,10 @@ public class MealLogService : IMealLogService
 
         if (date.HasValue)
         {
-            var day = date.Value.Date;
-            query = query.Where(m => m.Date.Date == day);
+            DateTime startDate = date.Value.Date;
+            DateTime endDate = startDate.AddDays(1);
+            
+            query = query.Where(m => m.Date >= startDate && m.Date < endDate);
         }
 
         var logs = await query
