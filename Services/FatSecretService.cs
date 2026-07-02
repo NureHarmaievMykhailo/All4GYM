@@ -145,12 +145,24 @@ public class FatSecretService : IFatSecretService
 
     private FatSecretProductDto MapJsonToProductDto(JsonElement item)
     {
+        long foodId = 0;
+        var foodIdProp = item.GetProperty("food_id");
+    
+        if (foodIdProp.ValueKind == JsonValueKind.Number)
+        {
+            foodId = foodIdProp.GetInt64();
+        }
+        else if (foodIdProp.ValueKind == JsonValueKind.String)
+        {
+            long.TryParse(foodIdProp.GetString(), out foodId);
+        }
+
         return new FatSecretProductDto
         {
-            FoodId = long.Parse(item.GetProperty("food_id").GetString()!),
-            FoodName = item.GetProperty("food_name").GetString()!,
+            FoodId = foodId,
+            FoodName = item.GetProperty("food_name").GetString() ?? "Без назви",
             BrandName = item.TryGetProperty("brand_name", out var b) ? b.GetString() ?? "" : "",
-            FoodDescription = item.GetProperty("food_description").GetString()!
+            FoodDescription = item.GetProperty("food_description").GetString() ?? ""
         };
     }
 }
