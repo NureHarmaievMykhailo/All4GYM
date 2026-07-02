@@ -1,13 +1,11 @@
-namespace All4GYM.Models;
+﻿namespace All4GYM.Dtos;
 
-public class FoodItem
+public class FatSecretProductDetailsDto
 {
-    public int Id { get; set; }
+    public long FoodId { get; set; }
     public string Name { get; set; } = null!;
-
-    public int Calories { get; set; }
+    public float Calories { get; set; }
     public float Proteins { get; set; }
     public float Fats { get; set; }
     public float Carbs { get; set; }
-    public long? FatSecretId { get; set; }
 }

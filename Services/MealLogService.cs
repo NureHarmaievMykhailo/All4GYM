@@ -8,6 +8,7 @@ namespace All4GYM.Services;
 public class MealLogService : IMealLogService
 {
     private readonly AppDbContext _context;
+    private readonly IFatSecretService _fatSecretService;
 
     public MealLogService(AppDbContext context)
     {
@@ -68,6 +69,54 @@ public class MealLogService : IMealLogService
             Grams = log.Grams,
             MealType = log.MealType.ToString()
         };
+    }
+    
+    public async Task<MealLogDto> CreateHybridAsync(string compositeFoodId, CreateMealLogDto dto, int userId)
+    {
+        int finalFoodItemId;
+
+        if (compositeFoodId.StartsWith("local_"))
+        {
+            finalFoodItemId = int.Parse(compositeFoodId.Replace("local_", ""));
+        }
+        else if (compositeFoodId.StartsWith("fatsecret_"))
+        {
+            long fatSecretId = long.Parse(compositeFoodId.Replace("fatsecret_", ""));
+            
+            var existingLocalFood = await _context.FoodItems
+                .FirstOrDefaultAsync(f => f.FatSecretId == fatSecretId);
+
+            if (existingLocalFood != null)
+            {
+                finalFoodItemId = existingLocalFood.Id;
+            }
+            else
+            {
+                var fsDetails = await _fatSecretService.GetFoodItemDetailsAsync(fatSecretId);
+
+                var newFoodItem = new FoodItem
+                {
+                    Name = fsDetails.Name,
+                    Calories = (int)fsDetails.Calories,
+                    Proteins = fsDetails.Proteins,
+                    Fats = fsDetails.Fats,
+                    Carbs = fsDetails.Carbs,
+                    FatSecretId = fatSecretId
+                };
+
+                _context.FoodItems.Add(newFoodItem);
+                await _context.SaveChangesAsync();
+
+                finalFoodItemId = newFoodItem.Id;
+            }
+        }
+        else
+        {
+            throw new ArgumentException("Неверный формат идентификатора продукта.");
+        }
+
+        dto.FoodItemId = finalFoodItemId;
+        return await CreateAsync(dto, userId);
     }
 
     public async Task<MealLogDto> CreateAsync(CreateMealLogDto dto, int userId)

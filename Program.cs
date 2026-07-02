@@ -8,6 +8,7 @@ using All4GYM.Services.AI;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
+using All4GYM.Attributes;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -91,6 +92,9 @@ builder.Services.AddHttpClient<IAIService, GeminiService>(client =>
 {
     client.BaseAddress = new Uri("https://generativelanguage.googleapis.com/v1beta/");
 });
+
+builder.Services.Configure<FatSecretOptions>(builder.Configuration.GetSection("FatSecretApi"));
+builder.Services.AddHttpClient<IFatSecretService, FatSecretService>();
 
 builder.Services.AddSingleton<StripePaymentIntentService>();
 builder.Services.AddSingleton<JwtService>();
