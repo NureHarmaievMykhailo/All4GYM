@@ -109,6 +109,7 @@ public class FatSecretService : IFatSecretService
         response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"[FatSecret RAW]: {json}"); //debug delete for prod
         using var doc = JsonDocument.Parse(json);
         var food = doc.RootElement.GetProperty("food");
         var servings = food.GetProperty("servings").GetProperty("serving");
@@ -162,7 +163,9 @@ public class FatSecretService : IFatSecretService
             FoodId = foodId,
             FoodName = item.GetProperty("food_name").GetString() ?? "Без назви",
             BrandName = item.TryGetProperty("brand_name", out var b) ? b.GetString() ?? "" : "",
-            FoodDescription = item.GetProperty("food_description").GetString() ?? ""
+            FoodDescription = item.TryGetProperty("food_description", out var descProp) 
+                ? descProp.GetString() ?? "" 
+                : ""
         };
     }
 }
