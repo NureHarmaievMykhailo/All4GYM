@@ -44,6 +44,23 @@ public class MealLogController : ControllerBase
         var log = await _service.GetByIdAsync(id, GetUserId());
         return Ok(log);
     }
+    
+    /// <summary>
+    /// Створити запис харчування на основі гібридного ID (Локальний або FatSecret).
+    /// </summary>
+    [HttpPost("hybrid")]
+    [Authorize(Roles = "User,Nutritionist,Admin")]
+    [SwaggerOperation(Summary = "Створити гібридний запис харчування", Description = "Приймає compositeFoodId виду local_X або fatsecret_X")]
+    public async Task<IActionResult> CreateHybrid([FromQuery] string compositeFoodId, [FromBody] CreateMealLogDto dto)
+    {
+        if (string.IsNullOrEmpty(compositeFoodId))
+        {
+            return BadRequest("Параметр compositeFoodId є обов'язковим.");
+        }
+
+        var created = await _service.CreateHybridAsync(compositeFoodId, dto, GetUserId());
+        return Ok(created);
+    }
 
     /// <summary>
     /// Створити новий запис харчування.
