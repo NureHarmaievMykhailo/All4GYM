@@ -42,6 +42,7 @@ public class FatSecretService : IFatSecretService
         response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"[FatSecret RAW]: {json}"); //debug delete for prod
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
@@ -66,6 +67,7 @@ public class FatSecretService : IFatSecretService
             if (!response.IsSuccessStatusCode) return new List<FatSecretProductDto>();
 
             var json = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"[FatSecret RAW]: {json}"); //debug delete for prod
             using var doc = JsonDocument.Parse(json);
             
             if (!doc.RootElement.TryGetProperty("foods", out var foodsProp) || 
