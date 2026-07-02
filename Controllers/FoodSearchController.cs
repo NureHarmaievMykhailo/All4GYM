@@ -58,14 +58,25 @@ public class FoodSearchController : ControllerBase
     {
         if (string.IsNullOrEmpty(desc)) return desc;
 
-        var parts = desc.Split('|');
-        if (parts.Length < 4) return desc;
+        try
+        {
+            var parts = desc.Split('|');
+            if (parts.Length < 4 || !parts[0].Contains("Calories:")) 
+            {
+                return desc;
+            }
 
-        string cals = parts[0].Substring(parts[0].IndexOf("Calories:") + 9).Replace("kcal", " ккал").Trim();
-        string fat = parts[1].Replace("Fat:", "Ж:").Replace("g", "г").Trim();
-        string carbs = parts[2].Replace("Carbs:", "В:").Replace("g", "г").Trim();
-        string prot = parts[3].Replace("Protein:", "Б:").Replace("g", "г").Trim();
+            string cals = parts[0].Substring(parts[0].IndexOf("Calories:") + 9).Replace("kcal", " ккал").Trim();
+            string fat = parts[1].Replace("Fat:", "Ж:").Replace("g", "г").Trim();
+            string carbs = parts[2].Replace("Carbs:", "В:").Replace("g", "г").Trim();
+            string prot = parts[3].Replace("Protein:", "Б:").Replace("g", "г").Trim();
 
-        return $"{cals} | {prot} {fat} {carbs}";
+            return $"{cals} | {prot} {fat} {carbs}";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Description Cleanup Error]: {ex.Message}");
+            return desc; 
+        }
     }
 }
