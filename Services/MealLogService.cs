@@ -10,9 +10,10 @@ public class MealLogService : IMealLogService
     private readonly AppDbContext _context;
     private readonly IFatSecretService _fatSecretService;
 
-    public MealLogService(AppDbContext context)
+    public MealLogService(AppDbContext context, IFatSecretService fatSecretService)
     {
         _context = context;
+        _fatSecretService = fatSecretService;
     }
     
     public async Task<List<MealLogDto>> GetMealLogsAsync(int userId, DateTime? date = null)
